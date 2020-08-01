@@ -114,7 +114,7 @@ public:
      */
     bool
     hasSnap() const {
-        return hasFeature(SNAP_INFO_CLIENT);
+        return hasFeature(SNAP_INFO_CLIENT) || hasFeature(SNAP_CFG_CLIENT);
     }
 
 private:
