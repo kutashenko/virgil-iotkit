@@ -16,6 +16,13 @@ function(add_clangformat _targetname)
 
         set(_sources "")
         foreach (_source ${_clang_sources})
+            # Skip Objective C sources
+            get_filename_component(_source_file_ext ${_source} LAST_EXT)
+            string(REGEX REPLACE ">" "" _source_file_ext "${_source_file_ext}")
+            if (_source_file_ext STREQUAL ".m" OR _source_file_ext STREQUAL ".mm")
+                continue()
+            endif()
+
             # remove cmake generator expressions if exists
             string(REGEX REPLACE "([^:]+:)" "" _source "${_source}")
             string(REGEX REPLACE ">" "" _source "${_source}")
