@@ -95,7 +95,11 @@ typedef enum {
     VS_LOGLEV_DEBUG = 0xFD, /**< Debug messages */
 } vs_log_level_t;
 
+#if !defined(WIN32) && !defined(_WIN32) && !defined(__WIN32__) && !defined(__NT__)
 #define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+#else
+#define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
+#endif
 
 /** Get current logging level to \a LOGLEV_VARIABLE */
 #define VS_LOG_GET_LOGLEVEL(LOGLEV_VARIABLE) (LOGLEV_VARIABLE) = vs_logger_get_loglev()
