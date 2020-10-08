@@ -39,12 +39,36 @@
 #include <QtNetwork>
 #include <QtBluetooth>
 
-class VSQNetifBLEEnumerator : public QObject {
+#include <QAbstractTableModel>
+
+class VSQNetifBLEEnumerator : public QAbstractTableModel {
     Q_OBJECT
 
-    typedef  QMap<QString, QBluetoothDeviceInfo> VSQBLEDevices;
+    struct BLEDevInfo {
+        QBluetoothDeviceInfo info;
+        QDateTime lastUpdate;
+
+        BLEDevInfo(const QBluetoothDeviceInfo &inf, const QDateTime &dt) {
+            info = inf;
+            lastUpdate = dt;
+        }
+
+        BLEDevInfo() {
+            info = QBluetoothDeviceInfo();
+            lastUpdate = QDateTime::currentDateTime().addYears(-1);
+        }
+    };
+
+    typedef  QMap<QString, BLEDevInfo> VSQBLEDevices;
 
 public:
+    enum Element {
+        Name = Qt::UserRole,
+        Manufacture,
+        RSSI,
+        ElementMax
+    };
+
     VSQNetifBLEEnumerator() = default;
 
     VSQNetifBLEEnumerator(VSQNetifBLEEnumerator const &) = delete;
@@ -54,17 +78,20 @@ public:
 
     virtual ~VSQNetifBLEEnumerator() = default;
 
-    /**
-     * @brief Get devices list which can be used for connection
-     * @return QStringList
-     */
-    Q_INVOKABLE QStringList devicesList() const;
     Q_INVOKABLE void select(QString devName) const;
 
     /**
      * @brief Start devices discovery
      */
     Q_INVOKABLE void startDiscovery();
+
+    /**
+     * QAbstractTableModel implementation
+     */
+    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+    int columnCount(const QModelIndex &parent = QModelIndex()) const override;
+    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+    QHash<int, QByteArray> roleNames() const override;
 
 signals:
 
@@ -91,7 +118,13 @@ private slots:
     void onDiscoveryFinished();
 
 private:
+    static const int kBLEDiscoverPeriodMS = 2000;
+    static const int kInactiveTimeoutMS = 10000;
+
     VSQBLEDevices m_devices;                                /**< Map of device name -> device info */
+
+    void updateInternal();
+    void cleanOldDevices();
 };
 
 #endif // VIRGIL_IOTKIT_QT_BLE_ENUMERATOR_H_

@@ -35,50 +35,120 @@
 #include <virgil/iot/qt/VSQIoTKit.h>
 #include <virgil/iot/qt/netif/VSQNetifBLEEnumerator.h>
 
-void VSQNetifBLEEnumerator::onDeviceDiscovered(const QBluetoothDeviceInfo & deviceInfo) {
-    if (deviceInfo.coreConfigurations() & QBluetoothDeviceInfo::LowEnergyCoreConfiguration
-      && !deviceInfo.name().isEmpty()) {
-        m_devices[deviceInfo.name()] = deviceInfo;
-        qDebug() << "[VIRGIL] Device Discovered : " << deviceInfo.name()
-                 << " : "
-                 << deviceInfo.deviceUuid();
+void
+VSQNetifBLEEnumerator::onDeviceDiscovered(const QBluetoothDeviceInfo &deviceInfo) {
+    if (deviceInfo.coreConfigurations() & QBluetoothDeviceInfo::LowEnergyCoreConfiguration &&
+        !deviceInfo.name().isEmpty()) {
+        m_devices[deviceInfo.name()] = BLEDevInfo(deviceInfo, QDateTime::currentDateTime()) ;
+        qDebug() << "[VIRGIL] Device Discovered : " << deviceInfo.name() << " : " << deviceInfo.deviceUuid();
         emit fireDevicesListUpdated();
+        updateInternal();
     }
 }
 
-void VSQNetifBLEEnumerator::onDiscoveryFinished() {
-    if (!QObject::sender()) return;
+void
+VSQNetifBLEEnumerator::updateInternal() {
+    beginResetModel();
+    endResetModel();
+
+    auto topLeft = createIndex(0,0);
+    auto bottomRight = createIndex(m_devices.count(),0);
+    emit dataChanged(topLeft, bottomRight);
+}
+
+void
+VSQNetifBLEEnumerator::cleanOldDevices() {
+    for (const auto &k: m_devices.keys()) {
+        if (m_devices[k].lastUpdate.msecsTo(QDateTime::currentDateTime()) > kInactiveTimeoutMS) {
+            m_devices.remove(k);
+        }
+    }
+}
+
+void
+VSQNetifBLEEnumerator::onDiscoveryFinished() {
+    if (!QObject::sender())
+        return;
     QObject::sender()->deleteLater();
     emit fireDiscoveryFinished();
+
+    updateInternal();
+
+    QTimer::singleShot(500, [this]() {
+        startDiscovery();
+    } );
 }
 
-QStringList VSQNetifBLEEnumerator::devicesList() const {
-    return m_devices.keys();
-}
-
-void VSQNetifBLEEnumerator::select(QString devName) const {
+void
+VSQNetifBLEEnumerator::select(QString devName) const {
     if (m_devices.keys().contains(devName)) {
-        emit fireDeviceSelected(m_devices[devName]);
+        emit fireDeviceSelected(m_devices[devName].info);
     }
 }
 
-void VSQNetifBLEEnumerator::startDiscovery() {
-    m_devices.clear();
+void
+VSQNetifBLEEnumerator::startDiscovery() {
+    cleanOldDevices();
+
     // Create a discovery agent and connect to its signals
-    QBluetoothDeviceDiscoveryAgent * discoveryAgent = new QBluetoothDeviceDiscoveryAgent(this);
+    QBluetoothDeviceDiscoveryAgent *discoveryAgent = new QBluetoothDeviceDiscoveryAgent(this);
+    discoveryAgent->setLowEnergyDiscoveryTimeout(kBLEDiscoverPeriodMS);
+
     discoveryAgent->setInquiryType(QBluetoothDeviceDiscoveryAgent::LimitedInquiry);
-    connect(discoveryAgent, &QBluetoothDeviceDiscoveryAgent::deviceDiscovered,
-            this, &VSQNetifBLEEnumerator::onDeviceDiscovered);
+    connect(discoveryAgent,
+            &QBluetoothDeviceDiscoveryAgent::deviceDiscovered,
+            this,
+            &VSQNetifBLEEnumerator::onDeviceDiscovered);
 
-    connect(discoveryAgent, &QBluetoothDeviceDiscoveryAgent::finished,
-            this, &VSQNetifBLEEnumerator::onDiscoveryFinished);
+    connect(discoveryAgent,
+            &QBluetoothDeviceDiscoveryAgent::finished,
+            this,
+            &VSQNetifBLEEnumerator::onDiscoveryFinished);
 
-    connect(discoveryAgent, &QBluetoothDeviceDiscoveryAgent::canceled,
-            this, &VSQNetifBLEEnumerator::onDiscoveryFinished);
+    connect(discoveryAgent,
+            &QBluetoothDeviceDiscoveryAgent::canceled,
+            this,
+            &VSQNetifBLEEnumerator::onDiscoveryFinished);
 
-    connect(discoveryAgent, SIGNAL(error(QBluetoothDeviceDiscoveryAgent::Error)),
-            this, SLOT(onDiscoveryFinished()));
+    connect(discoveryAgent, SIGNAL(error(QBluetoothDeviceDiscoveryAgent::Error)), this, SLOT(onDiscoveryFinished()));
 
     discoveryAgent->start(QBluetoothDeviceDiscoveryAgent::LowEnergyMethod);
 }
 
+int
+VSQNetifBLEEnumerator::rowCount(const QModelIndex &parent) const {
+    return m_devices.count();
+}
+
+int
+VSQNetifBLEEnumerator::columnCount(const QModelIndex &paren) const {
+    return 1;
+}
+
+QVariant
+VSQNetifBLEEnumerator::data(const QModelIndex &index, int role) const {
+    if (index.row() < m_devices.count()) {
+        auto key = m_devices.keys().at(index.row());
+
+        switch(role) {
+        case Element::Name:
+            return m_devices[key].info.name();
+
+        case Element::Manufacture:
+            return "";
+
+        case Element::RSSI:
+            return m_devices[key].info.rssi();
+        }
+    }
+
+    return QVariant();
+}
+
+QHash<int, QByteArray> VSQNetifBLEEnumerator::roleNames() const {
+    QHash<int, QByteArray> roles;
+    roles[Name] = "name";
+    roles[Manufacture] = "manufacture";
+    roles[RSSI] = "rssi";
+    return roles;
+}
