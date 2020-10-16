@@ -66,6 +66,7 @@ public:
         Name = Qt::UserRole,
         Manufacture,
         RSSI,
+        Initialized,
         ElementMax
     };
 
