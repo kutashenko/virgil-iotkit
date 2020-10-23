@@ -1,17 +1,20 @@
 #!/bin/bash
 
 SCRIPT_FOLDER="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+BASE_DIR="${SCRIPT_FOLDER}/../.."
+INC_DIR="${BASE_DIR}/_pio_include/virgil/iot"
+SRC_DIR="${BASE_DIR}/sdk"
 
-rm -rf ${SCRIPT_FOLDER}/include/virgil/iot      || true
-mkdir -p ${SCRIPT_FOLDER}/include/virgil/iot
+rm -rf ${INC_DIR}      || true
+mkdir -p ${INC_DIR}
 
-cp -rf ${SCRIPT_FOLDER}/src/modules/firmware/include/virgil/iot/firmware                                     ${SCRIPT_FOLDER}/include/virgil/iot
-cp -rf ${SCRIPT_FOLDER}/src/modules/logger/include/virgil/iot/logger                                         ${SCRIPT_FOLDER}/include/virgil/iot
-cp -rf ${SCRIPT_FOLDER}/src/modules/protocols/snap/include/virgil/iot/protocols                              ${SCRIPT_FOLDER}/include/virgil/iot
-cp -rf ${SCRIPT_FOLDER}/src/modules/provision/include/virgil/iot/provision                                   ${SCRIPT_FOLDER}/include/virgil/iot
-cp -rf ${SCRIPT_FOLDER}/src/modules/provision/trust_list/include/virgil/iot/trust_list                       ${SCRIPT_FOLDER}/include/virgil/iot
-cp -rf ${SCRIPT_FOLDER}/src/modules/crypto/secmodule/include/virgil/iot/secmodule                            ${SCRIPT_FOLDER}/include/virgil/iot
+cp -rf ${SRC_DIR}/modules/firmware/include/virgil/iot/firmware                                     ${INC_DIR}
+cp -rf ${SRC_DIR}/modules/logger/include/virgil/iot/logger                                         ${INC_DIR}
+cp -rf ${SRC_DIR}/modules/protocols/snap/include/virgil/iot/protocols                              ${INC_DIR}
+cp -rf ${SRC_DIR}/modules/provision/include/virgil/iot/provision                                   ${INC_DIR}
+cp -rf ${SRC_DIR}/modules/provision/trust_list/include/virgil/iot/trust_list                       ${INC_DIR}
+cp -rf ${SRC_DIR}/modules/crypto/secmodule/include/virgil/iot/secmodule                            ${INC_DIR}
 
-cp -rf ${SCRIPT_FOLDER}/src/default-impl/crypto/vs-soft-secmodule/include/virgil/iot/vs-soft-secmodule       ${SCRIPT_FOLDER}/include/virgil/iot
-cp -rf ${SCRIPT_FOLDER}/src/helpers/status_code/include/virgil/iot/status_code                               ${SCRIPT_FOLDER}/include/virgil/iot
-cp -rf ${SCRIPT_FOLDER}/src/helpers/macros/include/virgil/iot/macros                                         ${SCRIPT_FOLDER}/include/virgil/iot
+cp -rf ${SRC_DIR}/default-impl/crypto/vs-soft-secmodule/include/virgil/iot/vs-soft-secmodule       ${INC_DIR}
+cp -rf ${SRC_DIR}/helpers/status_code/include/virgil/iot/status_code                               ${INC_DIR}
+cp -rf ${SRC_DIR}/helpers/macros/include/virgil/iot/macros                                         ${INC_DIR}

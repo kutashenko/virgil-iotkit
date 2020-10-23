@@ -83,6 +83,7 @@ vs_update_file_type_t_decode(vs_update_file_type_t *src_data) {
     src_data->type = VS_IOT_NTOHS(src_data->type);
 }
 
+#if MSGR_SERVER
 /******************************************************************************/
 // Converting encode function for (vs_msgr_setd_request_t)
 void
@@ -96,7 +97,7 @@ void
 vs_msgr_setd_request_t_decode(vs_msgr_setd_request_t *src_data) {
     src_data->data_sz = VS_IOT_NTOHL(src_data->data_sz);
 }
-
+#endif
 /******************************************************************************/
 // Converting encode function for (vs_info_stat_response_t)
 void
