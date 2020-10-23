@@ -125,5 +125,5 @@ install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include/virgil
         )
 
 if(COMMAND add_clangformat)
-    add_clangformat(vs-module-provision)
+#    add_clangformat(vs-module-provision)
 endif()
