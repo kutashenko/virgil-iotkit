@@ -197,9 +197,17 @@ public:
     roleNames() const override;
 
 private:
+#if 1
+    // TODO: Remove after fixing of deprecated functionality
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
     using TPackets = QLinkedList<VSQSnapPacket>;
 
     TPackets m_packets;
+#if 1
+#pragma GCC diagnostic pop
+#endif
     const int m_maxPacketsAmount;
 
 private slots:
