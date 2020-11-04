@@ -63,9 +63,11 @@ public slots:
      * @param[in] device - device info for connection
      * @return "true" if communication started correctly
      */
-    bool onOpenDevice(const QBluetoothDeviceInfo device);
+    bool
+    open(const QBluetoothDeviceInfo device);
 
-    void onCloseDevice();
+    void
+    close();
 
 signals:
     void fireDeviceReady();

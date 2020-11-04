@@ -79,12 +79,16 @@ public:
 
     virtual ~VSQNetifBLEEnumerator() = default;
 
-    Q_INVOKABLE void select(QString devName) const;
-
     /**
      * @brief Start devices discovery
      */
     Q_INVOKABLE void startDiscovery();
+
+    /**
+     * @brief Get device information by its name
+     */
+    QBluetoothDeviceInfo
+    devInfo(const QString& name) const;
 
     /**
      * QAbstractTableModel implementation

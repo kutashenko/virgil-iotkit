@@ -90,14 +90,6 @@ VSQNetifBLEEnumerator::onDiscoveryFinished() {
 
 /******************************************************************************/
 void
-VSQNetifBLEEnumerator::select(QString devName) const {
-    if (m_devices.keys().contains(devName)) {
-        emit fireDeviceSelected(m_devices[devName].info);
-    }
-}
-
-/******************************************************************************/
-void
 VSQNetifBLEEnumerator::startDiscovery() {
     cleanOldDevices();
 
@@ -124,6 +116,16 @@ VSQNetifBLEEnumerator::startDiscovery() {
     connect(discoveryAgent, SIGNAL(error(QBluetoothDeviceDiscoveryAgent::Error)), this, SLOT(onDiscoveryFinished()));
 
     discoveryAgent->start(QBluetoothDeviceDiscoveryAgent::LowEnergyMethod);
+}
+
+/******************************************************************************/
+QBluetoothDeviceInfo
+VSQNetifBLEEnumerator::devInfo(const QString& name) const {
+    if (m_devices.keys().contains(name)) {
+        return m_devices[name].info;
+    }
+
+    return QBluetoothDeviceInfo();
 }
 
 /******************************************************************************/

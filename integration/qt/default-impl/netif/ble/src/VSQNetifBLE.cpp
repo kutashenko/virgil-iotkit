@@ -214,7 +214,7 @@ VSQNetifBLE::onDeviceDisconnected() {
 
 //******************************************************************************
 bool
-VSQNetifBLE::onOpenDevice(const QBluetoothDeviceInfo device) {
+VSQNetifBLE::open(const QBluetoothDeviceInfo device) {
     deactivate();
     VSQNetifBase::resetPacketForced();  // Force packet reset
 
@@ -236,7 +236,7 @@ VSQNetifBLE::onOpenDevice(const QBluetoothDeviceInfo device) {
 }
 
 //******************************************************************************
-void VSQNetifBLE::onCloseDevice() {
+void VSQNetifBLE::close() {
     deactivate();
 }
 
