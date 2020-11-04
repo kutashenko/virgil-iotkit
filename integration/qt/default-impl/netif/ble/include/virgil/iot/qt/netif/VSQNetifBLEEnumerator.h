@@ -98,8 +98,6 @@ signals:
 
     void fireDeviceSelected(QBluetoothDeviceInfo dev) const;
 
-    void fireDevicesListUpdated();
-
     /**
      * @brief Emited then discovery finished. New device list can be read by devicesList()
      */
@@ -120,11 +118,9 @@ private slots:
 
 private:
     static const int kBLEDiscoverPeriodMS = 2000;
-    static const int kInactiveTimeoutMS = 10000;
+    static const int kInactiveTimeoutMS = 15000;
 
     VSQBLEDevices m_devices;                                /**< Map of device name -> device info */
-
-    void updateInternal();
     void cleanOldDevices();
 };
 

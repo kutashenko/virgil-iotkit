@@ -32,55 +32,51 @@
 //
 //  Lead Maintainer: Virgil Security Inc. <support@virgilsecurity.com>
 
-#include <virgil/iot/qt/VSQIoTKit.h>
 #include <virgil/iot/qt/netif/VSQNetifBLEEnumerator.h>
 
+/******************************************************************************/
 void
 VSQNetifBLEEnumerator::onDeviceDiscovered(const QBluetoothDeviceInfo &deviceInfo) {
     if (deviceInfo.coreConfigurations() & QBluetoothDeviceInfo::LowEnergyCoreConfiguration &&
         !deviceInfo.name().isEmpty()) {
 
         qDebug() << "[VIRGIL] Device Discovered : " << deviceInfo.name() << " : " << deviceInfo.deviceUuid();
-        const bool _isInsert = !m_devices.keys().contains(deviceInfo.name());
-        m_devices[deviceInfo.name()] = BLEDevInfo(deviceInfo, QDateTime::currentDateTime());
-        const int _pos = m_devices.keys().indexOf(deviceInfo.name());
+        const bool _isInsert = !m_devices.keys().contains(deviceInfo.name()) /*&& m_devices.count()*/;
 
-
-        if (!_isInsert) {
-            const auto _beg = createIndex(0,0);
-            beginInsertRows(_beg, _pos, _pos);
+        if (_isInsert) {
+            // TODO: Fix it
+            auto tmp = m_devices;
+            tmp[deviceInfo.name()] = BLEDevInfo();
+            const int _pos = tmp.keys().indexOf(deviceInfo.name());
+            beginInsertRows(QModelIndex(), _pos, _pos);
+            m_devices[deviceInfo.name()] = BLEDevInfo(deviceInfo, QDateTime::currentDateTime());
             endInsertRows();
+        } else {
+            m_devices[deviceInfo.name()] = BLEDevInfo(deviceInfo, QDateTime::currentDateTime());
         }
 
-        const auto _idx = createIndex(_pos,0);
+        const int _pos = m_devices.keys().indexOf(deviceInfo.name());
+
+        qDebug() << "Updated data: " << _pos;
+        const auto _idx = createIndex(_pos, 0);
         emit dataChanged(_idx, _idx);
-        emit fireDevicesListUpdated();
     }
 }
 
-void
-VSQNetifBLEEnumerator::updateInternal() {
-    beginResetModel();
-    endResetModel();
-
-    auto topLeft = createIndex(0,0);
-    auto bottomRight = createIndex(m_devices.count(),0);
-    emit dataChanged(topLeft, bottomRight);
-}
-
+/******************************************************************************/
 void
 VSQNetifBLEEnumerator::cleanOldDevices() {
     for (const auto &k: m_devices.keys()) {
         if (m_devices[k].lastUpdate.msecsTo(QDateTime::currentDateTime()) > kInactiveTimeoutMS) {
-            const auto _beg = createIndex(0,0);
             const auto _pos = m_devices.keys().indexOf(k);
-            beginRemoveRows(_beg, _pos, _pos);
+            beginRemoveRows(QModelIndex(), _pos, _pos);
             m_devices.remove(k);
             endRemoveRows();
         }
     }
 }
 
+/******************************************************************************/
 void
 VSQNetifBLEEnumerator::onDiscoveryFinished() {
     if (!QObject::sender())
@@ -93,6 +89,7 @@ VSQNetifBLEEnumerator::onDiscoveryFinished() {
     } );
 }
 
+/******************************************************************************/
 void
 VSQNetifBLEEnumerator::select(QString devName) const {
     if (m_devices.keys().contains(devName)) {
@@ -100,6 +97,7 @@ VSQNetifBLEEnumerator::select(QString devName) const {
     }
 }
 
+/******************************************************************************/
 void
 VSQNetifBLEEnumerator::startDiscovery() {
     cleanOldDevices();
@@ -129,41 +127,47 @@ VSQNetifBLEEnumerator::startDiscovery() {
     discoveryAgent->start(QBluetoothDeviceDiscoveryAgent::LowEnergyMethod);
 }
 
+/******************************************************************************/
 int
 VSQNetifBLEEnumerator::rowCount(const QModelIndex &parent) const {
-    return 5;//m_devices.count();
+    return m_devices.count();
 }
 
+/******************************************************************************/
 int
-VSQNetifBLEEnumerator::columnCount(const QModelIndex &paren) const {
+VSQNetifBLEEnumerator::columnCount(const QModelIndex &parent) const {
     return 1;
 }
 
+/******************************************************************************/
 QVariant
 VSQNetifBLEEnumerator::data(const QModelIndex &index, int role) const {
-//    if (index.row() < m_devices.count()) {
-//        auto key = m_devices.keys().at(index.row());
+    qDebug() << "Requested index: " << index.column() << " x " << index.row() << " x " << role;
+    if (index.row() < m_devices.count()) {
+        auto key = m_devices.keys().at(index.row());
 
         switch(role) {
         case Element::Name:
-            return "test";//m_devices[key].info.name();
+            return m_devices[key].info.name();
 
         case Element::Manufacture:
             return "";
 
         case Element::RSSI:
-            return -10 * index.row() + 10 - index.row();//m_devices[key].info.rssi();
+            return m_devices[key].info.rssi();
 
         case Element::Initialized:
             return index.row() % 2;
 
         }
-//    }
+    }
 
     return QVariant();
 }
 
-QHash<int, QByteArray> VSQNetifBLEEnumerator::roleNames() const {
+/******************************************************************************/
+QHash<int, QByteArray>
+VSQNetifBLEEnumerator::roleNames() const {
     QHash<int, QByteArray> roles;
     roles[Name] = "name";
     roles[Manufacture] = "manufacture";
@@ -171,3 +175,5 @@ QHash<int, QByteArray> VSQNetifBLEEnumerator::roleNames() const {
     roles[Initialized] = "initialized";
     return roles;
 }
+
+/******************************************************************************/
