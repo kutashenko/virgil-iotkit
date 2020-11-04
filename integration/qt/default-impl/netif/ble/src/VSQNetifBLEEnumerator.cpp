@@ -57,7 +57,6 @@ VSQNetifBLEEnumerator::onDeviceDiscovered(const QBluetoothDeviceInfo &deviceInfo
 
         const int _pos = m_devices.keys().indexOf(deviceInfo.name());
 
-        qDebug() << "Updated data: " << _pos;
         const auto _idx = createIndex(_pos, 0);
         emit dataChanged(_idx, _idx);
     }
@@ -142,7 +141,6 @@ VSQNetifBLEEnumerator::columnCount(const QModelIndex &parent) const {
 /******************************************************************************/
 QVariant
 VSQNetifBLEEnumerator::data(const QModelIndex &index, int role) const {
-    qDebug() << "Requested index: " << index.column() << " x " << index.row() << " x " << role;
     if (index.row() < m_devices.count()) {
         auto key = m_devices.keys().at(index.row());
 
