@@ -89,7 +89,7 @@ public slots:
     onConfigureDevices();
 
     Q_INVOKABLE void
-    onSetConfigData(QString ssid, QString pass, QString account);
+    onSetConfigData(QString ssid, QString pass);
 
 private:
     const VirgilIoTKit::vs_snap_service_t *m_snapService;
@@ -99,7 +99,6 @@ private:
 
     QString m_ssid;
     QString m_pass;
-    QString m_account;
 };
 
 #endif // _VIRGIL_IOTKIT_QT_SNAP_CFG_CLIENT_SERVICE_H_

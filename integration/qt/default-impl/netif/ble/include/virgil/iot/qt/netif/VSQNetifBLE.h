@@ -70,7 +70,7 @@ public slots:
     close();
 
 signals:
-    void fireDeviceReady();
+    void fireDeviceReady(bool);
 
 protected:
     bool

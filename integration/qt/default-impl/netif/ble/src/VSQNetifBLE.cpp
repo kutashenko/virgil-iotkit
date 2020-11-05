@@ -182,7 +182,7 @@ VSQNetifBLE::onServiceDetailsDiscovered(QLowEnergyService::ServiceState serviceS
 
     VS_LOG_DEBUG("BLE device connected");
     m_canCommunicate = true;
-    emit fireDeviceReady();
+    emit fireDeviceReady(m_canCommunicate);
 }
 
 //******************************************************************************

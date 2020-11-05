@@ -45,7 +45,7 @@ VSQSnapCfgClient::VSQSnapCfgClient() {
 
 void
 VSQSnapCfgClient::onConfigureDevices() {
-    qDebug() << "Configure ssid:<" << m_ssid << "> pass:<" << m_pass << "> account:<" << m_account << ">";
+    qDebug() << "Configure ssid:<" << m_ssid << "> pass:<" << m_pass << ">";
 
     if (m_ssid.length() >= VS_CFG_STR_MAX) {
         VS_LOG_ERROR("SSID string is longer than %d", VS_CFG_STR_MAX);
@@ -55,14 +55,10 @@ VSQSnapCfgClient::onConfigureDevices() {
         VS_LOG_ERROR("Password string is longer than %d", VS_CFG_STR_MAX);
     }
 
-    if (m_account.length() >= VS_CFG_STR_MAX) {
-        VS_LOG_ERROR("Account string is longer than %d", VS_CFG_STR_MAX);
-    }
-
     vs_cfg_wifi_configuration_t config;
+    memset(&config, 0, sizeof(config));
     ::strcpy(reinterpret_cast<char *>(config.ssid), m_ssid.toStdString().c_str());
     ::strcpy(reinterpret_cast<char *>(config.pass), m_pass.toStdString().c_str());
-    ::strcpy(reinterpret_cast<char *>(config.account), m_account.toStdString().c_str());
     if (VS_CODE_OK != vs_snap_cfg_wifi_configure_device(vs_snap_netif_routing(),
                                  vs_snap_broadcast_mac(),
                                  &config)) {
@@ -81,8 +77,7 @@ VSQSnapCfgClient::onConfigureDevices() {
 }
 
 void
-VSQSnapCfgClient::onSetConfigData(QString ssid, QString pass, QString account) {
+VSQSnapCfgClient::onSetConfigData(QString ssid, QString pass) {
     m_ssid = ssid;
     m_pass = pass;
-    m_account = account;
 }
