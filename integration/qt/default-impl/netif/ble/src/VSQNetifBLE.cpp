@@ -182,7 +182,7 @@ VSQNetifBLE::onServiceDetailsDiscovered(QLowEnergyService::ServiceState serviceS
 
     VS_LOG_DEBUG("BLE device connected");
     m_canCommunicate = true;
-    emit fireDeviceReady(m_canCommunicate);
+    emit fireDeviceReady(true);
 }
 
 //******************************************************************************
@@ -192,6 +192,7 @@ VSQNetifBLE::onServicesDiscoveryFinished() {
     if (m_leService.isNull()) {
         VS_LOG_ERROR("Cannot create service object: %s", _serviceUuid.toStdString().c_str());
         onDeviceDisconnected();
+        emit fireDeviceError();
         return;
     }
     connect(m_leService.data(), SIGNAL(stateChanged(QLowEnergyService::ServiceState)),
@@ -204,12 +205,14 @@ void
 VSQNetifBLE::onServicesDiscoveryError(QLowEnergyController::Error error) {
     Q_UNUSED(error)
     onDeviceDisconnected();
+    emit fireDeviceError();
 }
 
 //******************************************************************************
 void
 VSQNetifBLE::onDeviceDisconnected() {
     m_canCommunicate = false;
+    emit fireDeviceDisconnected();
 }
 
 //******************************************************************************
@@ -247,6 +250,7 @@ VSQNetifBLE::deactivate() {
         m_leController->disconnectFromDevice();
     }
     m_canCommunicate = false;
+    emit fireDeviceDisconnected();
 }
 
 //******************************************************************************

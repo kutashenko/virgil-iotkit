@@ -71,6 +71,8 @@ public slots:
 
 signals:
     void fireDeviceReady(bool);
+    void fireDeviceDisconnected();
+    void fireDeviceError();
 
 protected:
     bool
