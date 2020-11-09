@@ -85,6 +85,11 @@ public:
     Q_INVOKABLE void startDiscovery();
 
     /**
+     * @brief Stop devices discovery
+     */
+    Q_INVOKABLE void stopDiscovery();
+
+    /**
      * @brief Get device information by its name
      */
     QBluetoothDeviceInfo
@@ -121,8 +126,10 @@ private slots:
     void onDiscoveryFinished();
 
 private:
-    static const int kBLEDiscoverPeriodMS = 3000;
+    static const int kBLEDiscoverPeriodMS = 2000;
     static const int kInactiveTimeoutMS = 15000;
+
+    bool m_stopped = false;
 
     VSQBLEDevices m_devices;                                /**< Map of device name -> device info */
     void cleanOldDevices();

@@ -69,7 +69,8 @@ public:
     /** Features enumeration */
     enum EFeature { SNAP_CFG_CLIENT,  /**< CFG client service */
                     SNAP_INFO_CLIENT, /**< INFO client service */
-        SNAP_SNIFFER      /**< Snap sniffer */
+                    SNAP_LAMP_CLIENT, /**< Lamp client service */
+                    SNAP_SNIFFER      /**< Snap sniffer */
     };
 
     /** Features set */
@@ -114,7 +115,7 @@ public:
      */
     bool
     hasSnap() const {
-        return hasFeature(SNAP_INFO_CLIENT) || hasFeature(SNAP_CFG_CLIENT);
+        return hasFeature(SNAP_INFO_CLIENT) || hasFeature(SNAP_CFG_CLIENT) || hasFeature(SNAP_LAMP_CLIENT);
     }
 
 private:

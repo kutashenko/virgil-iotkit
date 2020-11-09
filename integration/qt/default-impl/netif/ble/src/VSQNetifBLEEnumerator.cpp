@@ -84,13 +84,16 @@ VSQNetifBLEEnumerator::onDiscoveryFinished() {
     emit fireDiscoveryFinished();
 
     QTimer::singleShot(500, [this]() {
-        startDiscovery();
+        if (!m_stopped) {
+            startDiscovery();
+        }
     } );
 }
 
 /******************************************************************************/
 void
 VSQNetifBLEEnumerator::startDiscovery() {
+
     cleanOldDevices();
 
     // Create a discovery agent and connect to its signals
@@ -116,6 +119,12 @@ VSQNetifBLEEnumerator::startDiscovery() {
     connect(discoveryAgent, SIGNAL(error(QBluetoothDeviceDiscoveryAgent::Error)), this, SLOT(onDiscoveryFinished()));
 
     discoveryAgent->start(QBluetoothDeviceDiscoveryAgent::LowEnergyMethod);
+}
+
+/******************************************************************************/
+void
+VSQNetifBLEEnumerator::stopDiscovery() {
+    m_stopped = true;
 }
 
 /******************************************************************************/
