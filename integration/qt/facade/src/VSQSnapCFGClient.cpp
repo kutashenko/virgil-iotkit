@@ -40,7 +40,22 @@
 using namespace VirgilIoTKit;
 
 VSQSnapCfgClient::VSQSnapCfgClient() {
-    m_snapService = vs_snap_cfg_client();
+    vs_snap_cfg_client_service_t impl;
+    memset(&impl, 0, sizeof(impl));
+    impl.client_wifi_config_cb = &VSQSnapCfgClient::onConfigResult;
+    m_snapService = vs_snap_cfg_client(impl);
+}
+
+vs_status_e
+VSQSnapCfgClient::onConfigResult(vs_snap_transaction_id_t id, vs_status_e res) {
+    Q_UNUSED(id)
+    if (VS_CODE_OK == res) {
+        emit VSQSnapCfgClient::instance().fireConfigurationDone();
+    } else {
+        emit VSQSnapCfgClient::instance().fireConfigurationError();
+    }
+
+    return VS_CODE_OK;
 }
 
 void
@@ -64,16 +79,6 @@ VSQSnapCfgClient::onConfigureDevices() {
                                  &config)) {
         VS_LOG_ERROR("Cannot configure device");
     }
-
-    // TODO: Fix it
-    // need to receive response
-    auto timer = new QTimer;
-    connect(timer, &QTimer::timeout, [this](){
-        emit this->fireConfigurationDone(true);
-    });
-    connect(timer, &QTimer::timeout, timer, &QTimer::deleteLater);
-    timer->setSingleShot(true);
-    timer->start(1000);
 }
 
 void

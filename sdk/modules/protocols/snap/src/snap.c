@@ -153,7 +153,7 @@ _process_packet(const vs_netif_t *netif, vs_snap_packet_t *packet) {
                                                          response_packet->content,
                                                          RESPONSE_SZ_MAX,
                                                          &response_sz);
-                if (0 == res) {
+                if (VS_CODE_OK == res) {
                     // Send response
                     response_packet->header.content_size = response_sz;
                     response_packet->header.flags |= VS_SNAP_FLAG_ACK;

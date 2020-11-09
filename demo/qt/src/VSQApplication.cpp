@@ -66,7 +66,7 @@ VSQApplication::run() {
     connect(netifBLE.data(), &VSQNetifBLE::fireDeviceReady,
             &VSQIoTKitFacade::instance().snapCfgClient(), &VSQSnapCfgClient::onConfigureDevices);
 
-    connect(&VSQIoTKitFacade::instance().snapCfgClient(), SIGNAL(fireConfigurationDone(bool)),
+    connect(&VSQIoTKitFacade::instance().snapCfgClient(), SIGNAL(fireConfigurationDone()),
             netifBLE.data(), SLOT(onCloseDevice()));
 
     // Initialize IoTKit

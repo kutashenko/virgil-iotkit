@@ -121,7 +121,7 @@ private slots:
     void onDiscoveryFinished();
 
 private:
-    static const int kBLEDiscoverPeriodMS = 2000;
+    static const int kBLEDiscoverPeriodMS = 3000;
     static const int kInactiveTimeoutMS = 15000;
 
     VSQBLEDevices m_devices;                                /**< Map of device name -> device info */

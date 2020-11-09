@@ -42,6 +42,8 @@
 #include <virgil/iot/qt/helpers/VSQSingleton.h>
 #include <virgil/iot/qt/protocols/snap/VSQSnapServiceBase.h>
 
+using namespace VirgilIoTKit;
+
 class VSQSnapCfgClient final :
         public QObject,
         public VSQSingleton<VSQSnapCfgClient>,
@@ -82,7 +84,8 @@ public:
     }
 
 signals:
-    void fireConfigurationDone(bool isOK);
+    void fireConfigurationDone();
+    void fireConfigurationError();
 
 public slots:
     void
@@ -96,6 +99,9 @@ private:
 
     VSQSnapCfgClient();
     ~VSQSnapCfgClient() = default;
+
+    static vs_status_e
+    onConfigResult(vs_snap_transaction_id_t id, vs_status_e res);
 
     QString m_ssid;
     QString m_pass;

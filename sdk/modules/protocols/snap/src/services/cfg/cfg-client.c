@@ -46,6 +46,7 @@
 
 // External functions for access to upper level implementations
 static vs_snap_service_t _cfg_client = {0};
+static vs_snap_cfg_client_service_t _impl = {0};
 
 /******************************************************************************/
 vs_status_e
@@ -167,7 +168,39 @@ vs_snap_cfg_user_configure_device(const vs_netif_t *netif, const vs_mac_addr_t *
 
 /******************************************************************************/
 static vs_status_e
-_conf_response_processor(bool is_ack, const uint8_t *response, const uint16_t response_sz) {
+_conf_response_processor(vs_snap_element_t element_id, bool is_ack, const uint8_t *response, const uint16_t response_sz) {
+
+    vs_snap_transaction_id_t id = 0;
+    vs_status_e res = is_ack ? VS_CODE_OK : VS_CODE_ERR_SNAP_UNKNOWN;
+
+    switch (element_id) {
+
+    case VS_CFG_MSCR:
+        if (_impl.client_messenger_config_cb) {
+            _impl.client_messenger_config_cb(id, res);
+        }
+        break;
+
+    case VS_CFG_MSCH:
+        if (_impl.client_channel_config_cb) {
+            _impl.client_channel_config_cb(id, res);
+        }
+        break;
+
+    case VS_CFG_WIFI:
+        if (_impl.client_wifi_config_cb) {
+            _impl.client_wifi_config_cb(id, res);
+        }
+        break;
+
+    case VS_CFG_USER:
+        if (_impl.client_user_config_cb) {
+            _impl.client_user_config_cb(id, res);
+        }
+
+    default: {}
+    }
+
     return VS_CODE_OK;
 }
 
@@ -186,7 +219,7 @@ _cfg_client_response_processor(const struct vs_netif_t *netif,
     case VS_CFG_MSCH:
     case VS_CFG_WIFI:
     case VS_CFG_USER:
-        return _conf_response_processor(is_ack, response, response_sz);
+        return _conf_response_processor(element_id, is_ack, response, response_sz);
 
     default:
         VS_LOG_ERROR("Unsupported _CFG command");
@@ -197,13 +230,16 @@ _cfg_client_response_processor(const struct vs_netif_t *netif,
 
 /******************************************************************************/
 const vs_snap_service_t *
-vs_snap_cfg_client(void) {
+vs_snap_cfg_client(vs_snap_cfg_client_service_t impl) {
 
     _cfg_client.user_data = 0;
     _cfg_client.id = VS_CFG_SERVICE_ID;
     _cfg_client.request_process = NULL;
     _cfg_client.response_process = _cfg_client_response_processor;
     _cfg_client.periodical_process = NULL;
+
+    // Save callbacks
+    VS_IOT_MEMCPY(&_impl, &impl, sizeof(impl));
 
     return &_cfg_client;
 }

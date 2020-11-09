@@ -47,8 +47,20 @@ namespace VirgilIoTKit {
 extern "C" {
 #endif
 
+typedef vs_status_e (*vs_snap_cfg_client_wifi_cb_t)(vs_snap_transaction_id_t id, vs_status_e res);
+typedef vs_status_e (*vs_snap_cfg_client_messenger_cb_t)(vs_snap_transaction_id_t id, vs_status_e res);
+typedef vs_status_e (*vs_snap_cfg_client_channel_cb_t)(vs_snap_transaction_id_t id, vs_status_e res);
+typedef vs_status_e (*vs_snap_cfg_client_user_cb_t)(vs_snap_transaction_id_t id, vs_status_e res);
+
+typedef struct {
+    vs_snap_cfg_client_wifi_cb_t client_wifi_config_cb;
+    vs_snap_cfg_client_messenger_cb_t client_messenger_config_cb;
+    vs_snap_cfg_client_channel_cb_t client_channel_config_cb;
+    vs_snap_cfg_client_user_cb_t client_user_config_cb;
+} vs_snap_cfg_client_service_t;
+
 const vs_snap_service_t *
-vs_snap_cfg_client(void);
+vs_snap_cfg_client(vs_snap_cfg_client_service_t impl);
 
 vs_status_e
 vs_snap_cfg_wifi_configure_device(const vs_netif_t *netif,
