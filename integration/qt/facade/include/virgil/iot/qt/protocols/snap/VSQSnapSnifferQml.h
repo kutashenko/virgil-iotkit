@@ -144,7 +144,7 @@ public:
      * \param netif Network interface implementation
      */
     VSQSnapSnifferQml(const VSQSnapSnifferQmlConfig &snifferConfig, VSQNetifBase *netif);
-    ~VSQSnapSnifferQml() = default;
+    virtual ~VSQSnapSnifferQml() = default;
 
     /** Data roles */
     enum DeviceInfoRoles {

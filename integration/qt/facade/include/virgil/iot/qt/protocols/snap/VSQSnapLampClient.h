@@ -23,8 +23,8 @@
 
 #include <QtCore>
 
-#include <virgil/iot/protocols/snap/cfg/cfg-structs.h>
-#include <virgil/iot/protocols/snap/cfg/cfg-client.h>
+#include <virgil/iot/protocols/snap/lamp/lamp-structs.h>
+#include <virgil/iot/protocols/snap/lamp/lamp-client.h>
 #include <virgil/iot/qt/helpers/VSQSingleton.h>
 #include <virgil/iot/qt/protocols/snap/VSQSnapServiceBase.h>
 
@@ -70,14 +70,27 @@ public:
     }
 
 signals:
+    void
+    fireStateUpdate(const vs_mac_addr_t mac, const vs_snap_lamp_state_t state);
+
+    void
+    fireStateError(const vs_mac_addr_t mac);
 
 public slots:
+    void
+    requestState(const vs_mac_addr_t *mac);
+
+    void
+    setState(const vs_mac_addr_t *mac, const vs_snap_lamp_state_t *state);
+
 
 private:
     const VirgilIoTKit::vs_snap_service_t *m_snapService;
 
     VSQSnapLampClient();
-    ~VSQSnapLampClient() = default;
+    virtual ~VSQSnapLampClient() = default;
+
+    static vs_status_e onUpdateState(vs_status_e res, const vs_mac_addr_t *mac, const vs_snap_lamp_state_t *data);
 
 };
 

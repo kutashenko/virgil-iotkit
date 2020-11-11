@@ -35,16 +35,19 @@
 #include <virgil/iot/qt/protocols/snap/VSQNetifBase.h>
 #include <virgil/iot/qt/protocols/snap/VSQSnapServiceBase.h>
 #include <virgil/iot/qt/protocols/snap/VSQSnapINFOClient.h>
+#include <virgil/iot/qt/protocols/snap/VSQSnapLampClient.h>
 #include <virgil/iot/qt/VSQIoTKit.h>
 
 using namespace VirgilIoTKit;
 
+/******************************************************************************/
 VSQIoTKitFacade::~VSQIoTKitFacade() {
     m_snapProcessorThread->terminate();
     m_snapProcessorThread->wait();
     delete m_snapProcessorThread;
 }
 
+/******************************************************************************/
 bool
 VSQIoTKitFacade::init(const VSQFeatures &features, const VSQImplementations &impl, const VSQAppConfig &appConfig) {
 
@@ -77,6 +80,7 @@ VSQIoTKitFacade::init(const VSQFeatures &features, const VSQImplementations &imp
     }
 }
 
+/******************************************************************************/
 void
 VSQIoTKitFacade::initSnap() {
 
@@ -117,8 +121,13 @@ VSQIoTKitFacade::initSnap() {
     if (m_features.hasFeature(VSQFeatures::SNAP_CFG_CLIENT)) {
         registerService(VSQSnapCfgClient::instance());
     }
+
+    if (m_features.hasFeature(VSQFeatures::SNAP_LAMP_CLIENT)) {
+        registerService(VSQSnapLampClient::instance());
+    }
 }
 
+/******************************************************************************/
 void
 VSQIoTKitFacade::registerService(VSQSnapServiceBase &service) {
     if (vs_snap_register_service(service.serviceInterface()) != VirgilIoTKit::VS_CODE_OK) {
@@ -126,11 +135,13 @@ VSQIoTKitFacade::registerService(VSQSnapServiceBase &service) {
     }
 }
 
+/******************************************************************************/
 void
 VSQIoTKitFacade::onNetifProcess(struct VirgilIoTKit::vs_netif_t *netif, QByteArray data) {
     vs_snap_default_processor(netif, reinterpret_cast<const uint8_t *>(data.data()), data.length());
 }
 
+/******************************************************************************/
 vs_status_e
 VSQIoTKitFacade::netifProcessCb(struct vs_netif_t *netif, const uint8_t *data, const uint16_t data_sz) {
     QMetaObject::invokeMethod(&instance(), "onNetifProcess", Qt::QueuedConnection,
@@ -139,3 +150,5 @@ VSQIoTKitFacade::netifProcessCb(struct vs_netif_t *netif, const uint8_t *data, c
                             );
     return VS_CODE_OK;
 }
+
+/******************************************************************************/

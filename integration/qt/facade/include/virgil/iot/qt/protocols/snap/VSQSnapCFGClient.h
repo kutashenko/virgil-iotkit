@@ -98,7 +98,7 @@ private:
     const VirgilIoTKit::vs_snap_service_t *m_snapService;
 
     VSQSnapCfgClient();
-    ~VSQSnapCfgClient() = default;
+    virtual ~VSQSnapCfgClient() = default;
 
     static vs_status_e
     onConfigResult(vs_snap_transaction_id_t id, vs_status_e res);

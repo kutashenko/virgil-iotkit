@@ -233,7 +233,7 @@ private:
     int m_deviceAliveTimer = 0;
 
     VSQSnapInfoClient();
-    ~VSQSnapInfoClient() = default;
+    virtual ~VSQSnapInfoClient() = default;
 
     void
     timerEvent(QTimerEvent *event) override;

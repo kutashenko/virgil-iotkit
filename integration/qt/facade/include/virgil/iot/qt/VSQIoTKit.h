@@ -55,6 +55,7 @@
 #include <virgil/iot/qt/helpers/VSQSingleton.h>
 #include <virgil/iot/qt/helpers/VSQHelpers.h>
 
+#include <virgil/iot/qt/protocols/snap/VSQSnapLampClient.h>
 #include <virgil/iot/qt/protocols/snap/VSQSnapCFGClient.h>
 #include <virgil/iot/qt/protocols/snap/VSQSnapINFOClient.h>
 #include <virgil/iot/qt/protocols/snap/VSQSnapINFOClientQml.h>

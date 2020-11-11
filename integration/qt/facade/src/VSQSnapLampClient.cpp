@@ -19,56 +19,40 @@
 //   Lead Maintainer: Roman Kutashenko <kutashenko@gmail.com>
 
 #include <virgil/iot/qt/VSQIoTKit.h>
-
-#include <cstdio>
 #include <cstring>
 
 using namespace VirgilIoTKit;
 
-VSQSnapLampClient::VSQSnapCfgClient() {
-    vs_snap_cfg_client_service_t impl;
+/******************************************************************************/
+VSQSnapLampClient::VSQSnapLampClient() {
+    vs_snap_lamp_client_service_t impl;
     memset(&impl, 0, sizeof(impl));
-    impl.client_wifi_config_cb = &VSQSnapCfgClient::onConfigResult;
-    m_snapService = vs_snap_cfg_client(impl);
+    impl.device_state_update = &VSQSnapLampClient::onUpdateState;
+    m_snapService = vs_snap_lamp_client(impl);
 }
 
+/******************************************************************************/
 vs_status_e
-VSQSnapCfgClient::onConfigResult(vs_snap_transaction_id_t id, vs_status_e res) {
-    Q_UNUSED(id)
+VSQSnapLampClient::onUpdateState(vs_status_e res, const vs_mac_addr_t *mac, const vs_snap_lamp_state_t *data) {
     if (VS_CODE_OK == res) {
-        emit VSQSnapCfgClient::instance().fireConfigurationDone();
+        emit VSQSnapLampClient::instance().fireStateUpdate(*mac, *data);
     } else {
-        emit VSQSnapCfgClient::instance().fireConfigurationError();
+        emit VSQSnapLampClient::instance().fireStateError(*mac);
     }
 
     return VS_CODE_OK;
 }
 
+/******************************************************************************/
 void
-VSQSnapCfgClient::onConfigureDevices() {
-    qDebug() << "Configure ssid:<" << m_ssid << "> pass:<" << m_pass << ">";
-
-    if (m_ssid.length() >= VS_CFG_STR_MAX) {
-        VS_LOG_ERROR("SSID string is longer than %d", VS_CFG_STR_MAX);
-    }
-
-    if (m_pass.length() >= VS_CFG_STR_MAX) {
-        VS_LOG_ERROR("Password string is longer than %d", VS_CFG_STR_MAX);
-    }
-
-    vs_cfg_wifi_configuration_t config;
-    memset(&config, 0, sizeof(config));
-    ::strcpy(reinterpret_cast<char *>(config.ssid), m_ssid.toStdString().c_str());
-    ::strcpy(reinterpret_cast<char *>(config.pass), m_pass.toStdString().c_str());
-    if (VS_CODE_OK != vs_snap_cfg_wifi_configure_device(vs_snap_netif_routing(),
-                                 vs_snap_broadcast_mac(),
-                                 &config)) {
-        VS_LOG_ERROR("Cannot configure device");
-    }
+VSQSnapLampClient::requestState(const vs_mac_addr_t *mac) {
+    vs_snap_lamp_get_state(vs_snap_netif_routing(), mac);
 }
 
+/******************************************************************************/
 void
-VSQSnapCfgClient::onSetConfigData(QString ssid, QString pass) {
-    m_ssid = ssid;
-    m_pass = pass;
+VSQSnapLampClient::setState(const vs_mac_addr_t *mac, const vs_snap_lamp_state_t *state) {
+    vs_snap_lamp_set_state(vs_snap_netif_routing(), mac, state);
 }
+
+/******************************************************************************/

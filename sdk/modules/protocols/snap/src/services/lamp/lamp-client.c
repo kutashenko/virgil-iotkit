@@ -82,6 +82,7 @@ _lamp_response_processor(vs_snap_element_t element_id, bool is_ack, const uint8_
 
     vs_status_e res = is_ack ? VS_CODE_OK : VS_CODE_ERR_SNAP_UNKNOWN;
     vs_snap_lamp_state_t *state = NULL;
+
     if (is_ack) {
         state = (vs_snap_lamp_state_t *)response;
     }
@@ -89,7 +90,8 @@ _lamp_response_processor(vs_snap_element_t element_id, bool is_ack, const uint8_
     // TODO: Normalize structure
 
     if (_impl.device_state_update) {
-        _impl.device_state_update(res, state);
+        // TODO: Use real mac addr
+        _impl.device_state_update(res, vs_snap_broadcast_mac(), state);
     }
 
     return VS_CODE_OK;

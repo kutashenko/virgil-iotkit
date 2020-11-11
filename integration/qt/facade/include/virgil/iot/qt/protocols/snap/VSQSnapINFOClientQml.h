@@ -164,7 +164,7 @@ public:
 
 private:
     VSQSnapInfoClientQml();
-    ~VSQSnapInfoClientQml() = default;
+    virtual ~VSQSnapInfoClientQml() = default;
 
     static const VSQSnapInfoClient::TEnumDevicesArray &
     devicesList() {
