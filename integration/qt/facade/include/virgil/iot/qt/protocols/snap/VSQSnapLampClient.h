@@ -78,10 +78,10 @@ signals:
 
 public slots:
     void
-    requestState(const vs_mac_addr_t *mac);
+    requestState(const vs_mac_addr_t &mac);
 
     void
-    setState(const vs_mac_addr_t *mac, const vs_snap_lamp_state_t *state);
+    setState(const vs_mac_addr_t &mac, const vs_snap_lamp_state_t &state);
 
 
 private:

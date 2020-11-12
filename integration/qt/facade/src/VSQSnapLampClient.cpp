@@ -45,14 +45,14 @@ VSQSnapLampClient::onUpdateState(vs_status_e res, const vs_mac_addr_t *mac, cons
 
 /******************************************************************************/
 void
-VSQSnapLampClient::requestState(const vs_mac_addr_t *mac) {
-    vs_snap_lamp_get_state(vs_snap_netif_routing(), mac);
+VSQSnapLampClient::requestState(const vs_mac_addr_t &mac) {
+    vs_snap_lamp_get_state(vs_snap_netif_routing(), &mac);
 }
 
 /******************************************************************************/
 void
-VSQSnapLampClient::setState(const vs_mac_addr_t *mac, const vs_snap_lamp_state_t *state) {
-    vs_snap_lamp_set_state(vs_snap_netif_routing(), mac, state);
+VSQSnapLampClient::setState(const vs_mac_addr_t &mac, const vs_snap_lamp_state_t &state) {
+    vs_snap_lamp_set_state(vs_snap_netif_routing(), &mac, &state);
 }
 
 /******************************************************************************/
