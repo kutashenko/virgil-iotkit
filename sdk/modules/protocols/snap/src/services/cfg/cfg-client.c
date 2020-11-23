@@ -168,7 +168,10 @@ vs_snap_cfg_user_configure_device(const vs_netif_t *netif, const vs_mac_addr_t *
 
 /******************************************************************************/
 static vs_status_e
-_conf_response_processor(vs_snap_element_t element_id, bool is_ack, const uint8_t *response, const uint16_t response_sz) {
+_conf_response_processor(vs_snap_element_t element_id,
+                         bool is_ack,
+                         const uint8_t *response,
+                         const uint16_t response_sz) {
 
     vs_snap_transaction_id_t id = 0;
     vs_status_e res = is_ack ? VS_CODE_OK : VS_CODE_ERR_SNAP_UNKNOWN;
@@ -198,7 +201,8 @@ _conf_response_processor(vs_snap_element_t element_id, bool is_ack, const uint8_
             _impl.client_user_config_cb(id, res);
         }
 
-    default: {}
+    default: {
+    }
     }
 
     return VS_CODE_OK;

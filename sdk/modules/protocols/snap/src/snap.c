@@ -467,6 +467,7 @@ vs_snap_send(const vs_netif_t *netif, const uint8_t *data, uint16_t data_sz) {
     if (netif == vs_snap_netif_routing()) {
         for (i = 0; i < _netifs_cnt; i++) {
             if (_netifs[i]) {
+                _snap_set_src_mac(_netifs[i], (vs_snap_packet_t *)data);
                 _netifs[i]->tx(_netifs[i], data, data_sz);
             }
         }
@@ -500,14 +501,12 @@ vs_status_e
 vs_snap_mac_addr(const vs_netif_t *netif, vs_mac_addr_t *mac_addr) {
     VS_IOT_ASSERT(mac_addr);
 
-    if (!netif || netif == _default_netif()) {
-        VS_IOT_ASSERT(_default_netif());
-        VS_IOT_ASSERT(_default_netif()->mac_addr);
-        _default_netif()->mac_addr(_default_netif(), mac_addr);
-        return VS_CODE_OK;
-    }
+    const vs_netif_t *netif_fixed = netif ? netif : _default_netif();
 
-    return VS_CODE_ERR_SNAP_UNKNOWN;
+    VS_IOT_ASSERT(netif_fixed);
+    VS_IOT_ASSERT(netif_fixed->mac_addr);
+    netif_fixed->mac_addr(netif_fixed, mac_addr);
+    return VS_CODE_OK;
 }
 
 /******************************************************************************/
@@ -528,7 +527,7 @@ _snap_fill_header(const vs_mac_addr_t *recipient_mac, vs_snap_packet_t *packet) 
     packet->eth_header.type = VS_ETHERTYPE_VIRGIL;
 
     // Fill own MAC address for a default net interface
-    vs_snap_mac_addr(0, &packet->eth_header.src);
+    _snap_set_src_mac(0, packet);
 
     // Fill recipient MAC address
     if (!recipient_mac) {
@@ -540,6 +539,14 @@ _snap_fill_header(const vs_mac_addr_t *recipient_mac, vs_snap_packet_t *packet) 
     // Transaction ID
     packet->header.transaction_id = _snap_transaction_id();
 
+    return VS_CODE_OK;
+}
+
+/******************************************************************************/
+int
+_snap_set_src_mac(const vs_netif_t *netif, vs_snap_packet_t *packet) {
+    VS_IOT_ASSERT(packet);
+    vs_snap_mac_addr(netif, &packet->eth_header.src);
     return VS_CODE_OK;
 }
 
