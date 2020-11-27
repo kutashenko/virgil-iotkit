@@ -201,8 +201,7 @@ _conf_response_processor(vs_snap_element_t element_id,
             _impl.client_user_config_cb(id, res);
         }
 
-    default: {
-    }
+    default: {}
     }
 
     return VS_CODE_OK;

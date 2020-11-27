@@ -395,10 +395,20 @@ vs_snap_packet_dump(const char *title, const vs_snap_packet_t *packet) {
         return;
     }
     uint32_t sid = packet->header.service_id;
-    const char *p = (char*)&sid;
+    const char *p = (char *)&sid;
     uint32_t eid = packet->header.element_id;
-    const char *pe = (char*)&eid;
-    VS_LOG_DEBUG("%s: %c%c%c%c:%c%c%c%c", title ? title : "", p[0], p[1], p[2], p[3], pe[0], pe[1], pe[2], pe[3]);
+    const char *pe = (char *)&eid;
+    VS_LOG_DEBUG("%s: %c%c%c%c:%c%c%c%c id: %u",
+                 title ? title : "",
+                 p[0],
+                 p[1],
+                 p[2],
+                 p[3],
+                 pe[0],
+                 pe[1],
+                 pe[2],
+                 pe[3],
+                 (unsigned int)packet->header.transaction_id);
 }
 
 /******************************************************************************/
