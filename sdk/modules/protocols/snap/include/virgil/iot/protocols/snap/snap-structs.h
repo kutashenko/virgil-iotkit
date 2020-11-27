@@ -81,18 +81,18 @@ typedef uint32_t vs_snap_element_t;
 /******************************************************************************/
 /** MAC address
  */
-    typedef struct __attribute__((__packed__)) vs_mac_addr_t {
-        uint8_t bytes[ETH_ADDR_LEN]; /**< MAC address bytes */
-    } vs_mac_addr_t;
+typedef struct __attribute__((__packed__)) vs_mac_addr_t {
+    uint8_t bytes[ETH_ADDR_LEN]; /**< MAC address bytes */
+} vs_mac_addr_t;
 
 /******************************************************************************/
 /** Ethernet header
  */
-    typedef struct __attribute__((__packed__)) ethernet_header {
-        vs_mac_addr_t dest; /**< Destination MAC address */
-        vs_mac_addr_t src;  /**< Source MAC address */
-        uint16_t type;      /**< Ethernet packet type */
-    } vs_ethernet_header_t;
+typedef struct __attribute__((__packed__)) ethernet_header {
+    vs_mac_addr_t dest; /**< Destination MAC address */
+    vs_mac_addr_t src;  /**< Source MAC address */
+    uint16_t type;      /**< Ethernet packet type */
+} vs_ethernet_header_t;
 
 /** Received data
  *
