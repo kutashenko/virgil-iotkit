@@ -299,7 +299,6 @@ _snap_rx_cb(vs_netif_t *netif,
 
             // Check is my packet
             if (_accept_packet(netif, &packet->eth_header.src, &packet->eth_header.dest)) {
-
                 // Prepare for processing
                 *packet_data = (uint8_t *)packet;
                 *packet_data_sz = packet_sz;
@@ -385,6 +384,19 @@ vs_snap_init(vs_netif_t *default_netif,
 
     // Save default network interface
     return vs_snap_netif_add(default_netif);
+}
+
+/******************************************************************************/
+void
+vs_snap_packet_dump(const char *title, const vs_snap_packet_t *packet) {
+    if (!packet) {
+        return;
+    }
+    uint32_t sid = packet->header.service_id;
+    const char *p = (char*)&sid;
+    uint32_t eid = packet->header.element_id;
+    const char *pe = (char*)&eid;
+    VS_LOG_DEBUG("%s: %c%c%c%c:%c%c%c%c", title ? title : "", p[0], p[1], p[2], p[3], pe[0], pe[1], pe[2], pe[3]);
 }
 
 /******************************************************************************/

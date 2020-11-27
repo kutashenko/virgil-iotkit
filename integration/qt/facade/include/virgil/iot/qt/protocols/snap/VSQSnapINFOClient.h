@@ -205,7 +205,7 @@ public slots:
      * \return
      */
     bool
-    onStartFullPolling(const VSQMac &deviceMac = broadcastMac, quint16 periodSeconds = 1) {
+    onStartFullPolling(const VSQMac &deviceMac = broadcastMac, quint16 periodSeconds = 3) {
         return changePolling(
                 {VSQSnapInfoClient::GENERAL_INFO, VSQSnapInfoClient::STATISTICS}, deviceMac, true, periodSeconds);
     }

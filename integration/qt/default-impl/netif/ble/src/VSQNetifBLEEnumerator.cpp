@@ -34,13 +34,19 @@
 
 #include <virgil/iot/qt/netif/VSQNetifBLEEnumerator.h>
 
+#if !defined(BLE_ENUM_DEBUG)
+#define BLE_ENUM_DEBUG 0
+#endif
+
 /******************************************************************************/
 void
 VSQNetifBLEEnumerator::onDeviceDiscovered(const QBluetoothDeviceInfo &deviceInfo) {
     if (deviceInfo.coreConfigurations() & QBluetoothDeviceInfo::LowEnergyCoreConfiguration &&
         !deviceInfo.name().isEmpty()) {
 
+#if BLE_ENUM_DEBUG
         qDebug() << "[VIRGIL] Device Discovered : " << deviceInfo.name() << " : " << deviceInfo.deviceUuid();
+#endif
         const bool _isInsert = !m_devices.keys().contains(deviceInfo.name()) /*&& m_devices.count()*/;
 
         if (_isInsert) {

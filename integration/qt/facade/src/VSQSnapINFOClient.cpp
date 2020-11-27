@@ -37,7 +37,7 @@
 using namespace VirgilIoTKit;
 
 /* Send log message about new active device */
-//#define LOG_START_NOTIFY
+#define LOG_START_NOTIFY
 
 /* Send log message about general information device changes */
 //#define LOG_GENERAL_INFO
@@ -46,7 +46,7 @@ using namespace VirgilIoTKit;
 //#define LOG_STATISTICS
 
 /* Send log message about dead device */
-//#define LOG_DEAD_DEVICE
+#define LOG_DEAD_DEVICE
 
 VSQSnapInfoClient::VSQSnapInfoClient() {
     m_snapInfoImpl.device_start = startNotify;
@@ -55,7 +55,7 @@ VSQSnapInfoClient::VSQSnapInfoClient() {
 
     m_snapService = vs_snap_info_client(m_snapInfoImpl);
 
-    constexpr auto deadDevicesCheckMSec = 1000;
+    constexpr auto deadDevicesCheckMSec = 5000;
     m_deviceAliveTimer = startTimer(deadDevicesCheckMSec, Qt::VeryCoarseTimer);
     if (!m_deviceAliveTimer) {
         VS_LOG_WARNING("Unable to start timer for alive device check for INFO Client");

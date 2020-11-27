@@ -108,6 +108,9 @@ vs_snap_netif_add(vs_netif_t *netif);
 vs_status_e
 vs_snap_default_processor(vs_netif_t *netif, const uint8_t *data, const uint16_t data_sz);
 
+void
+vs_snap_packet_dump(const char *title, const vs_snap_packet_t *packet);
+
 /** Return current manufacture ID
  *
  * \return #vs_device_manufacture_id_t Manufacture ID. Cannot be NULL.
