@@ -731,6 +731,7 @@ _fldt_destroy_client(void) {
 /******************************************************************************/
 static int
 _fldt_client_request_processor(const struct vs_netif_t *netif,
+                               const vs_ethernet_header_t *eth_header,
                                vs_snap_element_t element_id,
                                const uint8_t *request,
                                const uint16_t request_sz,
@@ -762,6 +763,7 @@ _fldt_client_request_processor(const struct vs_netif_t *netif,
 /******************************************************************************/
 static int
 _fldt_client_response_processor(const struct vs_netif_t *netif,
+                                const vs_ethernet_header_t *eth_header,
                                 vs_snap_element_t element_id,
                                 bool is_ack,
                                 const uint8_t *response,

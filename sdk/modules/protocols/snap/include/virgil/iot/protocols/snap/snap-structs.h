@@ -71,6 +71,29 @@ typedef uint32_t vs_snap_service_id_t;
  */
 typedef uint32_t vs_snap_element_t;
 
+#define ETH_ADDR_LEN (6)
+#define ETH_TYPE_LEN (2)
+#define ETH_CRC_LEN (4)
+#define ETH_HEADER_LEN (ETH_ADDR_LEN + ETH_ADDR_LEN + ETH_TYPE_LEN)
+#define ETH_MIN_LEN (64)
+#define ETH_MTU (1500)
+
+/******************************************************************************/
+/** MAC address
+ */
+    typedef struct __attribute__((__packed__)) vs_mac_addr_t {
+        uint8_t bytes[ETH_ADDR_LEN]; /**< MAC address bytes */
+    } vs_mac_addr_t;
+
+/******************************************************************************/
+/** Ethernet header
+ */
+    typedef struct __attribute__((__packed__)) ethernet_header {
+        vs_mac_addr_t dest; /**< Destination MAC address */
+        vs_mac_addr_t src;  /**< Source MAC address */
+        uint16_t type;      /**< Ethernet packet type */
+    } vs_ethernet_header_t;
+
 /** Received data
  *
  * Callback for #vs_netif_init_t function callback.
@@ -174,6 +197,7 @@ typedef vs_status_e (*vs_netif_deinit_t)(struct vs_netif_t *netif);
  * \return #VS_CODE_OK in case of success or error code.
  */
 typedef vs_status_e (*vs_snap_service_request_processor_t)(const struct vs_netif_t *netif,
+                                                           const vs_ethernet_header_t *eth_header,
                                                            vs_snap_element_t element_id,
                                                            const uint8_t *request,
                                                            const uint16_t request_sz,
@@ -195,6 +219,7 @@ typedef vs_status_e (*vs_snap_service_request_processor_t)(const struct vs_netif
  * \return #VS_CODE_OK in case of success or error code.
  */
 typedef vs_status_e (*vs_snap_service_response_processor_t)(const struct vs_netif_t *netif,
+                                                            const vs_ethernet_header_t *eth_header,
                                                             vs_snap_element_t element_id,
                                                             bool is_ack,
                                                             const uint8_t *response,
@@ -233,13 +258,6 @@ typedef enum {
     VS_SNAP_DEV_INITIALIZER = HTONL_IN_COMPILE_TIME(0x0040) /**< Initializer role */
 } vs_snap_device_role_e;
 
-#define ETH_ADDR_LEN (6)
-#define ETH_TYPE_LEN (2)
-#define ETH_CRC_LEN (4)
-#define ETH_HEADER_LEN (ETH_ADDR_LEN + ETH_ADDR_LEN + ETH_TYPE_LEN)
-#define ETH_MIN_LEN (64)
-#define ETH_MTU (1500)
-
 #define VS_ETHERTYPE_VIRGIL (HTONS_IN_COMPILE_TIME(0xABCD))
 
 /** SNAP Flags */
@@ -247,22 +265,6 @@ typedef enum {
     VS_SNAP_FLAG_ACK = HTONL_IN_COMPILE_TIME(0x0001), /**< Confirmation about receiving a correct packet */
     VS_SNAP_FLAG_NACK = HTONL_IN_COMPILE_TIME(0x0002) /**< Notification about rejecting a packet */
 } vs_snap_flags_e;
-
-/******************************************************************************/
-/** MAC address
- */
-typedef struct __attribute__((__packed__)) vs_mac_addr_t {
-    uint8_t bytes[ETH_ADDR_LEN]; /**< MAC address bytes */
-} vs_mac_addr_t;
-
-/******************************************************************************/
-/** Ethernet header
- */
-typedef struct __attribute__((__packed__)) ethernet_header {
-    vs_mac_addr_t dest; /**< Destination MAC address */
-    vs_mac_addr_t src;  /**< Source MAC address */
-    uint16_t type;      /**< Ethernet packet type */
-} vs_ethernet_header_t;
 
 /******************************************************************************/
 /** SNAP packet header

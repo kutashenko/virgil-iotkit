@@ -268,6 +268,7 @@ _poll_response_processor(bool is_ack, const uint8_t *response, const uint16_t re
 /******************************************************************************/
 static vs_status_e
 _info_client_request_processor(const struct vs_netif_t *netif,
+                               const vs_ethernet_header_t *eth_header,
                                vs_snap_element_t element_id,
                                const uint8_t *request,
                                const uint16_t request_sz,
@@ -275,34 +276,43 @@ _info_client_request_processor(const struct vs_netif_t *netif,
                                const uint16_t response_buf_sz,
                                uint16_t *response_sz) {
     (void)netif;
+    vs_status_e res;
 
     *response_sz = 0;
 
     switch (element_id) {
 
     case VS_INFO_SNOT:
-        return _snot_request_processor(request, request_sz, response, response_buf_sz, response_sz);
+        res = _snot_request_processor(request, request_sz, response, response_buf_sz, response_sz);
 
     case VS_INFO_ENUM:
     case VS_INFO_POLL:
         return VS_CODE_COMMAND_NO_RESPONSE;
 
     case VS_INFO_GINF:
-        return _ginf_request_processor(request, request_sz, response, response_buf_sz, response_sz);
+        res = _ginf_request_processor(request, request_sz, response, response_buf_sz, response_sz);
+        break;
 
     case VS_INFO_STAT:
-        return _stat_request_processor(request, request_sz, response, response_buf_sz, response_sz);
+        res = _stat_request_processor(request, request_sz, response, response_buf_sz, response_sz);
+        break;
 
     default:
         VS_LOG_ERROR("Unsupported INFO command");
         VS_IOT_ASSERT(false);
         return VS_CODE_COMMAND_NO_RESPONSE;
     }
+
+    if (vs_snap_is_broadcast(&eth_header->dest)) {
+        return VS_CODE_COMMAND_NO_RESPONSE;
+    }
+    return res;
 }
 
 /******************************************************************************/
 static vs_status_e
 _info_client_response_processor(const struct vs_netif_t *netif,
+                                const vs_ethernet_header_t *eth_header,
                                 vs_snap_element_t element_id,
                                 bool is_ack,
                                 const uint8_t *response,

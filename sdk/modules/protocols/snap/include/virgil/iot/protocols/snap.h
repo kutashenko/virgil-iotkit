@@ -197,6 +197,9 @@ vs_snap_mac_addr(const vs_netif_t *netif, vs_mac_addr_t *mac_addr);
 const vs_mac_addr_t *
 vs_snap_broadcast_mac(void);
 
+bool
+vs_snap_is_broadcast(const vs_mac_addr_t *mac_addr);
+
 /** Prepare and send SNAP message
  *
  * Sends \a data message \a data_sz bytes length by using \a element_ID element of \a service_id SNAP service to \a mac

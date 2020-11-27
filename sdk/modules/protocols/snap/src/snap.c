@@ -89,8 +89,8 @@ _default_netif(void) {
 }
 
 /******************************************************************************/
-static bool
-_is_broadcast(const vs_mac_addr_t *mac_addr) {
+bool
+vs_snap_is_broadcast(const vs_mac_addr_t *mac_addr) {
     return 0 == memcmp(mac_addr->bytes, _snap_broadcast_mac.bytes, ETH_ADDR_LEN);
 }
 
@@ -106,7 +106,7 @@ _is_my_mac(const vs_netif_t *netif, const vs_mac_addr_t *mac_addr) {
 /******************************************************************************/
 static bool
 _accept_packet(const vs_netif_t *netif, const vs_mac_addr_t *src_mac, const vs_mac_addr_t *dest_mac) {
-    bool dst_is_broadcast = _is_broadcast(dest_mac);
+    bool dst_is_broadcast = vs_snap_is_broadcast(dest_mac);
     bool dst_is_my_mac = _is_my_mac(netif, dest_mac);
     bool src_is_my_mac = _is_my_mac(netif, src_mac);
     return !src_is_my_mac && (dst_is_broadcast || dst_is_my_mac);
@@ -136,6 +136,7 @@ _process_packet(const vs_netif_t *netif, vs_snap_packet_t *packet) {
             if (packet->header.flags & VS_SNAP_FLAG_ACK || packet->header.flags & VS_SNAP_FLAG_NACK) {
                 if (_snap_services[i]->response_process) {
                     _snap_services[i]->response_process(netif,
+                                                        &packet->eth_header,
                                                         packet->header.element_id,
                                                         !!(packet->header.flags & VS_SNAP_FLAG_ACK),
                                                         packet->content,
@@ -147,6 +148,7 @@ _process_packet(const vs_netif_t *netif, vs_snap_packet_t *packet) {
                 need_response = true;
                 _statistics.received++;
                 res = _snap_services[i]->request_process(netif,
+                                                         &packet->eth_header,
                                                          packet->header.element_id,
                                                          packet->content,
                                                          packet->header.content_size,
@@ -203,7 +205,7 @@ _snap_periodical(void) {
 #if VS_ENABLE_ROUTING
 static bool
 _need_routing(const vs_netif_t *netif, const vs_mac_addr_t *src_mac, const vs_mac_addr_t *dest_mac) {
-    bool dst_is_broadcast = _is_broadcast(dest_mac);
+    bool dst_is_broadcast = vs_snap_is_broadcast(dest_mac);
     bool dst_is_my_mac = _is_my_mac(netif, dest_mac);
     bool src_is_my_mac = _is_my_mac(netif, src_mac);
     return !src_is_my_mac && (dst_is_broadcast || !dst_is_my_mac);
