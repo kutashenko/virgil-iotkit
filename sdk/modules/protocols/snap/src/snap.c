@@ -126,7 +126,7 @@ _process_packet(const vs_netif_t *netif, vs_snap_packet_t *packet) {
 
     // Prepare request
     VS_IOT_MEMCPY(&response_packet->header, &packet->header, sizeof(vs_snap_header_t));
-    _snap_fill_header(&packet->eth_header.src, response_packet);
+    _snap_fill_header(&packet->eth_header.src, packet->header.transaction_id, response_packet);
 
     // Detect required command
     for (i = 0; i < _snap_services_num; i++) {
@@ -533,7 +533,9 @@ _snap_transaction_id() {
 
 /******************************************************************************/
 vs_status_e
-_snap_fill_header(const vs_mac_addr_t *recipient_mac, vs_snap_packet_t *packet) {
+_snap_fill_header(const vs_mac_addr_t *recipient_mac,
+                  vs_snap_transaction_id_t transaction_id,
+                  vs_snap_packet_t *packet) {
 
     VS_IOT_ASSERT(packet);
 
@@ -551,7 +553,7 @@ _snap_fill_header(const vs_mac_addr_t *recipient_mac, vs_snap_packet_t *packet) 
     }
 
     // Transaction ID
-    packet->header.transaction_id = _snap_transaction_id();
+    packet->header.transaction_id = transaction_id;
 
     return VS_CODE_OK;
 }
@@ -594,7 +596,7 @@ vs_snap_send_request(const vs_netif_t *netif,
     if (data_sz) {
         VS_IOT_MEMCPY(packet->content, data, data_sz);
     }
-    _snap_fill_header(mac, packet);
+    _snap_fill_header(mac, _snap_transaction_id(), packet);
 
     // Send request
     _statistics.sent++;
