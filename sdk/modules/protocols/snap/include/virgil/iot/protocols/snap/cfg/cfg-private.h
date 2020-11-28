@@ -54,6 +54,7 @@ typedef enum {
     VS_CFG_MSCR = HTONL_IN_COMPILE_TIME('MSCR'), /* configure MeSsenger CReds */
     VS_CFG_MSCH = HTONL_IN_COMPILE_TIME('MSCH'), /* configure MeSsenger CHannel */
     VS_CFG_USER = HTONL_IN_COMPILE_TIME('USER'), /* configure USER data */
+    VS_CFG_RSET = HTONL_IN_COMPILE_TIME('RSET'), /* configure ReSET all settings */
 } vs_snap_cfg_element_e;
 #pragma GCC diagnostic pop
 

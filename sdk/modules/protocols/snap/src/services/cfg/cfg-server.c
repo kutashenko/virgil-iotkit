@@ -49,30 +49,49 @@ static vs_snap_cfg_server_service_t _impl = {NULL, NULL, NULL, NULL};
 
 /******************************************************************/
 static vs_status_e
-_conf_wifi_request_processor(const uint8_t *request,
+_conf_wifi_request_processor(const struct vs_netif_t *netif,
+                             const vs_ethernet_header_t *eth_header,
+                             const uint8_t *request,
                              const uint16_t request_sz,
                              uint8_t *response,
                              const uint16_t response_buf_sz,
                              uint16_t *response_sz) {
-    vs_status_e ret_code = VS_CODE_OK;
-    vs_cfg_conf_wifi_request_t *conf_request = (vs_cfg_conf_wifi_request_t *)request;
-    vs_cfg_wifi_configuration_t config_data;
-
     // Check input parameters
-    CHECK_NOT_ZERO_RET(response, VS_CODE_ERR_INCORRECT_ARGUMENT);
+    CHECK_NOT_ZERO_RET(eth_header, VS_CODE_ERR_INCORRECT_ARGUMENT);
+    CHECK_NOT_ZERO_RET(request, VS_CODE_ERR_INCORRECT_ARGUMENT);
     CHECK_RET(request_sz == sizeof(vs_cfg_conf_wifi_request_t),
               VS_CODE_ERR_INCORRECT_ARGUMENT,
               "Unsupported request structure vs_cfg_conf_wifi_request_t");
+
+    vs_status_e ret_code = VS_CODE_OK;
+    vs_cfg_conf_wifi_request_t *conf_request = (vs_cfg_conf_wifi_request_t *)request;
+    vs_cfg_wifi_configuration_t config_data;
 
     if (_impl.wifi_config_cb) {
         VS_IOT_MEMCPY(config_data.ssid, conf_request->ssid, VS_CFG_STR_MAX);
         VS_IOT_MEMCPY(config_data.pass, conf_request->pass, VS_CFG_STR_MAX);
         VS_IOT_MEMCPY(config_data.account, conf_request->account, VS_CFG_STR_MAX);
-        ret_code = _impl.wifi_config_cb(&config_data);
+        ret_code = _impl.wifi_config_cb(netif, eth_header->src, &config_data);
     }
 
     return ret_code;
 }
+
+/******************************************************************/
+static vs_status_e
+_conf_reset_request_processor(const struct vs_netif_t *netif, const vs_ethernet_header_t *eth_header) {
+    // Check input parameters
+    CHECK_NOT_ZERO_RET(eth_header, VS_CODE_ERR_INCORRECT_ARGUMENT);
+
+    vs_status_e ret_code = VS_CODE_OK;
+
+    if (_impl.reset_cb) {
+        ret_code = _impl.reset_cb(netif, eth_header->src);
+    }
+
+    return ret_code;
+}
+
 
 /******************************************************************/
 static vs_status_e
@@ -198,10 +217,14 @@ _cfg_request_processor(const struct vs_netif_t *netif,
         return _conf_channel_request_processor(request, request_sz, response, response_buf_sz, response_sz);
 
     case VS_CFG_WIFI:
-        return _conf_wifi_request_processor(request, request_sz, response, response_buf_sz, response_sz);
+        return _conf_wifi_request_processor(
+                netif, eth_header, request, request_sz, response, response_buf_sz, response_sz);
 
     case VS_CFG_USER:
         return _conf_user_request_processor(request, request_sz, response, response_buf_sz, response_sz);
+
+    case VS_CFG_RSET:
+        return _conf_reset_request_processor(netif, eth_header);
 
     default:
         VS_LOG_ERROR("Unsupported _CFG command");

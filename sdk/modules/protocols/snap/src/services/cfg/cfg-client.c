@@ -167,6 +167,21 @@ vs_snap_cfg_user_configure_device(const vs_netif_t *netif, const vs_mac_addr_t *
 }
 
 /******************************************************************************/
+vs_status_e
+vs_snap_cfg_reset_device(const vs_netif_t *netif, const vs_mac_addr_t *mac) {
+    vs_status_e ret_code;
+
+    // Check input parameters
+    CHECK_NOT_ZERO_RET(mac, VS_CODE_ERR_INCORRECT_ARGUMENT);
+    CHECK_NOT_ZERO_RET(!vs_snap_is_broadcast(mac), VS_CODE_ERR_INCORRECT_ARGUMENT);
+
+    // Send request
+    STATUS_CHECK_RET(vs_snap_send_request(netif, mac, VS_CFG_SERVICE_ID, VS_CFG_RSET, NULL, 0), "Cannot send request");
+
+    return VS_CODE_OK;
+}
+
+/******************************************************************************/
 static vs_status_e
 _conf_response_processor(vs_snap_element_t element_id,
                          bool is_ack,

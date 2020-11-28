@@ -221,6 +221,16 @@ vs_snap_send_request(const vs_netif_t *netif,
                      const uint8_t *data,
                      uint16_t data_sz);
 
+vs_status_e
+vs_snap_send_response(const vs_netif_t *netif,
+                      const vs_mac_addr_t *mac,
+                      vs_snap_transaction_id_t transaction_id,
+                      vs_snap_service_id_t service_id,
+                      vs_snap_element_t element_id,
+                      bool is_ack,
+                      const uint8_t *data,
+                      uint16_t data_sz);
+
 /** Return SNAP statistics
  *
  * \return #vs_snap_stat_t Statistic data

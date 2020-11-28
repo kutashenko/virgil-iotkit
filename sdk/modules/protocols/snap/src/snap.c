@@ -583,6 +583,42 @@ vs_snap_broadcast_mac(void) {
 }
 
 /******************************************************************************/
+static vs_status_e
+_prepare_packet(vs_snap_packet_t *packet,
+                const vs_mac_addr_t *mac,
+                vs_snap_transaction_id_t transaction_id,
+                vs_snap_service_id_t service_id,
+                vs_snap_element_t element_id,
+                bool is_request,
+                bool is_ack,
+                const uint8_t *data,
+                uint16_t data_sz) {
+
+    CHECK_NOT_ZERO_RET(mac, VS_CODE_ERR_ZERO_ARGUMENT);
+    CHECK_NOT_ZERO_RET(packet, VS_CODE_ERR_ZERO_ARGUMENT);
+
+    // Prepare request
+    packet->header.service_id = service_id;
+    packet->header.element_id = element_id;
+    packet->header.content_size = data_sz;
+    if (data_sz) {
+        VS_IOT_MEMCPY(packet->content, data, data_sz);
+    }
+    _snap_fill_header(mac, transaction_id, packet);
+
+    // Fill response info, if required
+    if (!is_request) {
+        if (is_ack) {
+            packet->header.flags |= VS_SNAP_FLAG_ACK;
+        } else {
+            packet->header.flags |= VS_SNAP_FLAG_NACK;
+        }
+    }
+
+    return VS_CODE_OK;
+}
+
+/******************************************************************************/
 vs_status_e
 vs_snap_send_request(const vs_netif_t *netif,
                      const vs_mac_addr_t *mac,
@@ -600,16 +636,39 @@ vs_snap_send_request(const vs_netif_t *netif,
     packet = (vs_snap_packet_t *)buffer;
 
     // Prepare request
-    packet->header.service_id = service_id;
-    packet->header.element_id = element_id;
-    packet->header.content_size = data_sz;
-    if (data_sz) {
-        VS_IOT_MEMCPY(packet->content, data, data_sz);
-    }
-    _snap_fill_header(mac, _snap_transaction_id(), packet);
+    CHECK_RET(_prepare_packet(packet, mac, _snap_transaction_id(), service_id, element_id, true, false, data, data_sz),
+              VS_CODE_ERR_TX_SNAP,
+              "Cannot prepare packet to send");
 
     // Send request
     _statistics.sent++;
+    return vs_snap_send(netif, buffer, sizeof(vs_snap_packet_t) + packet->header.content_size);
+}
+
+/******************************************************************************/
+vs_status_e
+vs_snap_send_response(const vs_netif_t *netif,
+                      const vs_mac_addr_t *mac,
+                      vs_snap_transaction_id_t transaction_id,
+                      vs_snap_service_id_t service_id,
+                      vs_snap_element_t element_id,
+                      bool is_ack,
+                      const uint8_t *data,
+                      uint16_t data_sz) {
+    uint8_t buffer[sizeof(vs_snap_packet_t) + data_sz];
+    vs_snap_packet_t *packet;
+
+    VS_IOT_MEMSET(buffer, 0, sizeof(buffer));
+
+    // Prepare pointers
+    packet = (vs_snap_packet_t *)buffer;
+
+    // Prepare request
+    CHECK_RET(_prepare_packet(packet, mac, transaction_id, service_id, element_id, false, is_ack, data, data_sz),
+              VS_CODE_ERR_TX_SNAP,
+              "Cannot prepare packet to send");
+
+    // Send response
     return vs_snap_send(netif, buffer, sizeof(vs_snap_packet_t) + packet->header.content_size);
 }
 

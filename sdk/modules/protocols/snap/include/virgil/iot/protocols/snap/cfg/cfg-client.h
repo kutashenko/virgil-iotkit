@@ -68,6 +68,9 @@ vs_snap_cfg_wifi_configure_device(const vs_netif_t *netif,
                                   const vs_cfg_wifi_configuration_t *config);
 
 vs_status_e
+vs_snap_cfg_reset_device(const vs_netif_t *netif, const vs_mac_addr_t *mac);
+
+vs_status_e
 vs_snap_cfg_messenger_configure_device(const vs_netif_t *netif,
                                        const vs_mac_addr_t *mac,
                                        const vs_cfg_messenger_config_t *config);
