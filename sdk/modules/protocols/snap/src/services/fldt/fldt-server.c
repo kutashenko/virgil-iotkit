@@ -609,6 +609,7 @@ _fldt_destroy_server(void) {
 /******************************************************************************/
 static vs_status_e
 _fldt_server_request_processor(const struct vs_netif_t *netif,
+                               const vs_ethernet_header_t *eth_header,
                                vs_snap_element_t element_id,
                                const uint8_t *request,
                                const uint16_t request_sz,
@@ -640,6 +641,7 @@ _fldt_server_request_processor(const struct vs_netif_t *netif,
 /******************************************************************************/
 static vs_status_e
 _fldt_server_response_processor(const struct vs_netif_t *netif,
+                                const vs_ethernet_header_t *eth_header,
                                 vs_snap_element_t element_id,
                                 bool is_ack,
                                 const uint8_t *response,

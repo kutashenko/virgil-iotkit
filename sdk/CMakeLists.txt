@@ -39,18 +39,16 @@ cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 #
 set (PACKAGE_VERSION "0")
 set (PACKAGE_VERSION_MAJOR "1")
-set (PACKAGE_VERSION_MINOR "3")
+set (PACKAGE_VERSION_MINOR "0")
 
 include(GNUInstallDirs)
 
 # ---------------------------------------------------------------------------
 #   Check build type
 # ---------------------------------------------------------------------------
-#option(ANDROID_QT "Enable build for Android based on Qt library" OFF)
 
 if (ANDROID_QT OR APPLE_PLATFORM)
     set(MOBILE_PLATFORM ON)
-    set(GO_DISABLE ON)
     set(VIRGIL_IOT_DEFAULT_IMPL OFF)
 endif()
 
@@ -64,7 +62,7 @@ endif()
 # ---------------------------------------------------------------------------
 #   Enable Golang
 # ---------------------------------------------------------------------------
-if(NOT GO_DISABLE)
+if(GO_ENABLE)
     include(cmake/golang.cmake)
     include(cmake/flags.cmake)
     set(VIRGIL_IOT_BINARY_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} CACHE STRING "Path to the Virgil IoT SDK binary")
@@ -74,10 +72,10 @@ endif()
 # ---------------------------------------------------------------------------
 #   Project
 # ---------------------------------------------------------------------------
-if (GO_DISABLE)
-    project(virgil-iot-sdk VERSION ${PACKAGE_VERSION}.${PACKAGE_VERSION_MAJOR}.${PACKAGE_VERSION_MINOR} LANGUAGES C)
-else()
+if (GO_ENABLE)
     project(virgil-iot-sdk VERSION ${PACKAGE_VERSION}.${PACKAGE_VERSION_MAJOR}.${PACKAGE_VERSION_MINOR} LANGUAGES C Go)
+else()
+    project(virgil-iot-sdk VERSION ${PACKAGE_VERSION}.${PACKAGE_VERSION_MAJOR}.${PACKAGE_VERSION_MINOR} LANGUAGES C)
 endif()
 set(VIRGIL_IOT_DIRECTORY ${CMAKE_CURRENT_LIST_DIR} CACHE STRING "Path to the Virgil IoT SDK")
 
@@ -156,7 +154,7 @@ include (virgil_depends)
 #
 #   Tools
 #
-if (NOT GO_DISABLE)
+if (GO_ENABLE)
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/tools)
 endif()
 

@@ -32,6 +32,8 @@
 //
 //  Lead Maintainer: Virgil Security Inc. <support@virgilsecurity.com>
 
+#if !defined(WIN32)
+
 #include <pthread.h>
 #include <string.h>
 #include <stdlib.h>
@@ -437,3 +439,4 @@ vs_file_cache_clean(void) {
 }
 
 /******************************************************************************/
+#endif // !WIN32

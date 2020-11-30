@@ -32,6 +32,8 @@
 //
 //  Lead Maintainer: Virgil Security Inc. <support@virgilsecurity.com>
 
+#if !defined(WIN32)
+
 #include <string.h>
 #include <stdio.h>
 #include <signal.h>
@@ -240,3 +242,4 @@ vs_app_is_need_restart(void) {
 }
 
 /******************************************************************************/
+#endif // !WIN32

@@ -31,7 +31,7 @@ function build() {
     rm -rf ${BUILD_DIR}
     mkdir -p ${BUILD_DIR}
     pushd ${BUILD_DIR}
-    cmake ${BUILD_DIR_BASE} ${CMAKE_ARGUMENTS} -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DGO_DISABLE=ON -G "Unix Makefiles"
+    cmake ${BUILD_DIR_BASE} ${CMAKE_ARGUMENTS} -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -G "Unix Makefiles"
 
     make -j ${CORES} vs-module-logger
     make -j ${CORES} vs-module-provision

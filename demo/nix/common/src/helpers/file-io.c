@@ -32,6 +32,8 @@
 //
 //  Lead Maintainer: Virgil Security Inc. <support@virgilsecurity.com>
 
+#if !defined(WIN32)
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -389,3 +391,4 @@ vs_files_get_base_dir(void) {
     return _base_dir;
 }
 /******************************************************************************/
+#endif // !WIN32

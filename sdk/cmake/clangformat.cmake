@@ -4,7 +4,7 @@ include_guard()
 find_program(CLANG_FORMAT_EXECUTABLE clang-format)
 
 function(add_clangformat _targetname)
-    if (CLANG_FORMAT_EXECUTABLE)
+    if (CLANG_FORMAT_EXECUTABLE AND NOT WIN32)
         if (NOT TARGET ${_targetname})
             message(FATAL_ERROR "add_clangformat should only be called on targets(got " ${_targetname} ")")
         endif ()

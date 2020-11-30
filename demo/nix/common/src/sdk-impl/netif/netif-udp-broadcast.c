@@ -32,6 +32,7 @@
 //
 //  Lead Maintainer: Virgil Security Inc. <support@virgilsecurity.com>
 
+#if !defined(WIN32)
 #include <arpa/inet.h>
 #include <assert.h>
 #include <pthread.h>
@@ -263,3 +264,5 @@ vs_hal_netif_udp_bcast(vs_mac_addr_t mac_addr) {
 }
 
 /******************************************************************************/
+
+#endif // !WIN32

@@ -37,7 +37,6 @@ cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 #------------------------------------------------------------------------------
 #   Settings
 #------------------------------------------------------------------------------
-option(GO_DISABLE "Disable Go apps" OFF)
 option(BIGENDIAN_64_BIT_BUILD "Build for MIPS 64 big endian" OFF)
 option(BIGENDIAN_32_BIT_BUILD "Build for MIPS 32 big endian" OFF)
 option(GATEWAY_SIMULATOR "On/Off code for simulator." ON)
@@ -55,12 +54,10 @@ option(SMART_MAC_COUNTER_SUPPORT_GATEWAY "On/Off Smart MAC energy meter support 
 option(SMART_MAC_COUNTER_SUPPORT_THING "On/Off Smart MAC energy meter support by thing." OFF)
 
 if(BIGENDIAN_64_BIT_BUILD)
-    set(GO_DISABLE ON CACHE BOOL "Disable Go apps" FORCE)
     set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_LIST_DIR}/../../sdk/cmake/mips64.toolchain.cmake")
 endif()
 
 if(BIGENDIAN_32_BIT_BUILD)
-    set(GO_DISABLE ON CACHE BOOL "Disable Go apps" FORCE)
     set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_LIST_DIR}/../../sdk/cmake/mips32.toolchain.cmake")
 endif()
 
@@ -95,7 +92,7 @@ set(APP_VERSION "${APP_MAJOR}.${APP_MINOR}.${APP_PATCH}.${APP_BUILD}")
 #
 # Path to config file for a firmware signer
 #
-if(NOT VIRGIL_FIRMWARE_SIGNER_CONFIG_FILE_PATH AND NOT GO_DISABLE)
+if(NOT VIRGIL_FIRMWARE_SIGNER_CONFIG_FILE_PATH AND GO_ENABLE)
     file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/signer-config/signer-template-config.json" "[{\"path\": \"${CMAKE_CURRENT_LIST_DIR}/dummy-keys/dummy-auth1.key\", \"key_type\": 1}, {\"path\": \"${CMAKE_CURRENT_LIST_DIR}/dummy-keys/dummy-firmware1.key\", \"key_type\": 3}]")
     set(VIRGIL_FIRMWARE_SIGNER_CONFIG_FILE_PATH "${CMAKE_CURRENT_BINARY_DIR}/signer-config/signer-template-config.json")
     message(WARNING "VIRGIL_FIRMWARE_SIGNER_CONFIG_FILE_PATH is not defined. Use default config with dummy keys")
@@ -107,7 +104,7 @@ option(GATEWAY_SIMULATOR "On/Off Test message" OFF)
 #------------------------------------------------------------------------------
 #   Golang
 #------------------------------------------------------------------------------
-if(NOT GO_DISABLE)
+if(GO_ENABLE)
     include(${VIRGIL_IOT_SDK_DIRECTORY}/cmake/golang.cmake)
     include(${VIRGIL_IOT_SDK_DIRECTORY}/cmake/flags.cmake)
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${VIRGIL_IOT_SDK_DIRECTORY}/cmake")
@@ -116,10 +113,10 @@ endif()
 #------------------------------------------------------------------------------
 #   Setup project
 #------------------------------------------------------------------------------
-if(GO_DISABLE)
-    project(iot-demo-nix VERSION 0.1.0 LANGUAGES C)
-else()
+if(GO_ENABLE)
     project(iot-demo-nix VERSION 0.1.0 LANGUAGES C Go)
+else()
+    project(iot-demo-nix VERSION 0.1.0 LANGUAGES C)
 endif()
 
 #

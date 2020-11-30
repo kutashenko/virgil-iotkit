@@ -106,7 +106,7 @@ target_link_libraries(thing
 #
 # Create a signed firmware image
 #
-if(NOT GO_DISABLE)
+if(GO_ENABLE)
 	if(NOT THING_APP_FILE_SIZE)
 		set(THING_APP_FILE_SIZE "2097152" CACHE STRING "Full thing application file size")
 	endif()

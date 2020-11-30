@@ -163,6 +163,7 @@ _stat_request_processor(const uint8_t *request,
 /******************************************************************************/
 static vs_status_e
 _msgr_client_request_processor(const struct vs_netif_t *netif,
+                               const vs_ethernet_header_t *eth_header,
                                vs_snap_element_t element_id,
                                const uint8_t *request,
                                const uint16_t request_sz,
@@ -242,6 +243,7 @@ _enum_response_processor(bool is_ack, const uint8_t *response, const uint16_t re
 /******************************************************************************/
 static vs_status_e
 _msgr_client_response_processor(const struct vs_netif_t *netif,
+                                const vs_ethernet_header_t *eth_header,
                                 vs_snap_element_t element_id,
                                 bool is_ack,
                                 const uint8_t *response,

@@ -82,6 +82,7 @@ _prvs_dnid_process_response(const struct vs_netif_t *netif, const uint8_t *respo
 /******************************************************************************/
 static vs_status_e
 _prvs_service_response_processor(const struct vs_netif_t *netif,
+                                 const vs_ethernet_header_t *eth_header,
                                  vs_snap_element_t element_id,
                                  bool is_ack,
                                  const uint8_t *response,

@@ -123,7 +123,7 @@ target_link_libraries(gateway
 #
 # Create a signed firmware image
 #
-if(NOT GO_DISABLE)
+if(GO_ENABLE)
 	if(NOT GW_APP_FILE_SIZE)
 		set(GW_APP_FILE_SIZE "2097152" CACHE STRING "Full gateway application file size")
 	endif()
