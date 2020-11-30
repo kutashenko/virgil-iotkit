@@ -191,6 +191,16 @@ _fill_ginf_data(vs_info_ginf_response_t *general_info) {
 
 /******************************************************************************/
 static vs_status_e
+_snam_request_processing(const uint8_t *request,
+                         const uint16_t request_sz,
+                         uint8_t *response,
+                         const uint16_t response_buf_sz,
+                         uint16_t *response_sz) {
+    return VS_CODE_ERR_NOT_IMPLEMENTED;
+}
+
+/******************************************************************************/
+static vs_status_e
 _snot_request_processor(const uint8_t *request,
                         const uint16_t request_sz,
                         uint8_t *response,
@@ -258,6 +268,9 @@ _info_request_processor(const struct vs_netif_t *netif,
 
     case VS_INFO_POLL:
         return _poll_request_processing(request, request_sz, response, response_buf_sz, response_sz);
+
+    case VS_INFO_SNAM:
+        return _snam_request_processing(request, request_sz, response, response_buf_sz, response_sz);
 
     case VS_INFO_GINF:
     case VS_INFO_STAT:

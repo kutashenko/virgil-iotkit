@@ -243,6 +243,9 @@ vs_snap_info_set_polling(const vs_netif_t *netif,
                          bool enable,
                          uint16_t period_seconds);
 
+vs_status_e
+vs_snap_info_set_name(const vs_netif_t *netif, const vs_mac_addr_t *mac, const char *name);
+
 #ifdef __cplusplus
 } // extern "C"
 } // namespace VirgilIoTKit
