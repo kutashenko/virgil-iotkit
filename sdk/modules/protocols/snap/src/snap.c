@@ -636,7 +636,9 @@ vs_snap_send_request(const vs_netif_t *netif,
     packet = (vs_snap_packet_t *)buffer;
 
     // Prepare request
-    CHECK_RET(_prepare_packet(packet, mac, _snap_transaction_id(), service_id, element_id, true, false, data, data_sz),
+    CHECK_RET(VS_CODE_OK ==
+                      _prepare_packet(
+                              packet, mac, _snap_transaction_id(), service_id, element_id, true, false, data, data_sz),
               VS_CODE_ERR_TX_SNAP,
               "Cannot prepare packet to send");
 
@@ -664,7 +666,8 @@ vs_snap_send_response(const vs_netif_t *netif,
     packet = (vs_snap_packet_t *)buffer;
 
     // Prepare request
-    CHECK_RET(_prepare_packet(packet, mac, transaction_id, service_id, element_id, false, is_ack, data, data_sz),
+    CHECK_RET(VS_CODE_OK == _prepare_packet(
+                                    packet, mac, transaction_id, service_id, element_id, false, is_ack, data, data_sz),
               VS_CODE_ERR_TX_SNAP,
               "Cannot prepare packet to send");
 
