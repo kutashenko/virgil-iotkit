@@ -57,6 +57,8 @@
 #include <virgil/iot/protocols/snap/snap-structs.h>
 #include <virgil/iot/status_code/status_code.h>
 
+#define DEVICE_NAME_SZ_MAX  64
+
 #ifdef __cplusplus
 namespace VirgilIoTKit {
 extern "C" {
@@ -138,6 +140,12 @@ vs_snap_device_serial(void);
  */
 uint32_t
 vs_snap_device_roles(void);
+
+const char *
+vs_snap_device_name(void);
+
+vs_status_e
+vs_snap_init_device_name(const char *name);
 
 /** Return device network interface
  *

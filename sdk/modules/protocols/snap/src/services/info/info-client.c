@@ -120,6 +120,34 @@ vs_snap_info_set_polling(const vs_netif_t *netif,
 }
 
 /******************************************************************************/
+vs_status_e
+vs_snap_info_set_name(const vs_netif_t *netif, const vs_mac_addr_t *mac, const char *name) {
+    vs_info_name_request_t request;
+    vs_status_e ret_code;
+    size_t name_len;
+
+    CHECK_NOT_ZERO_RET(name, VS_CODE_ERR_ZERO_ARGUMENT);
+    name_len = strnlen(name, DEVICE_NAME_SZ_MAX);
+    CHECK_RET(name_len < DEVICE_NAME_SZ_MAX, VS_CODE_ERR_INCORRECT_PARAMETER, "Device name is too long");
+
+    // Broadcast request is impossible
+    CHECK_NOT_ZERO_RET(mac, VS_CODE_ERR_ZERO_ARGUMENT);
+
+    // Fill request fields
+    VS_IOT_MEMSET(&request, 0, sizeof(request));
+    VS_IOT_MEMCPY(request.name, name, name_len);
+
+    // TODO: Normalize byte order
+
+    // Send request
+    STATUS_CHECK_RET(vs_snap_send_request(
+            netif, mac, VS_INFO_SERVICE_ID, VS_INFO_SNAM, (uint8_t *)&request, sizeof(request)),
+                     "Cannot send request");
+
+    return VS_CODE_OK;
+}
+
+/******************************************************************************/
 static vs_status_e
 _snot_request_processor(const uint8_t *request,
                         const uint16_t request_sz,

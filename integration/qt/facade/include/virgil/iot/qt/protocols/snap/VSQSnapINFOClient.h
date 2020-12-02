@@ -210,6 +210,9 @@ public slots:
                 {VSQSnapInfoClient::GENERAL_INFO, VSQSnapInfoClient::STATISTICS}, deviceMac, true, periodSeconds);
     }
 
+    bool
+    onSetName(const VSQMac &deviceMac, const QString &name);
+
 signals:
 
     /** Signal "New information has been received"

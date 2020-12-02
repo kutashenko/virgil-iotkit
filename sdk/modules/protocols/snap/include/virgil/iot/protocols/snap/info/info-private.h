@@ -49,10 +49,9 @@
 #pragma GCC diagnostic ignored "-Wmultichar"
 typedef enum { VS_INFO_SERVICE_ID = HTONL_IN_COMPILE_TIME('INFO') } vs_info_t;
 
-
 typedef enum {
     VS_INFO_SNOT = HTONL_IN_COMPILE_TIME('SNOT'), /* Start NOTification */
-    VS_INFO_SNAM = HTONL_IN_COMPILE_TIME('SNAM'), /* Start device NAMe */
+    VS_INFO_SNAM = HTONL_IN_COMPILE_TIME('SNAM'), /* Set device NAMe */
     VS_INFO_ENUM = HTONL_IN_COMPILE_TIME('ENUM'), /* ENUMerate devices */
     VS_INFO_GINF = HTONL_IN_COMPILE_TIME('GINF'), /* General INFormation */
     VS_INFO_STAT = HTONL_IN_COMPILE_TIME('STAT'), /* STATistics */
@@ -61,6 +60,7 @@ typedef enum {
 #pragma GCC diagnostic pop
 
 typedef struct __attribute__((__packed__)) {
+    uint8_t name[DEVICE_NAME_SZ_MAX];
     vs_device_manufacture_id_t manufacture_id;
     vs_device_type_t device_type;
     vs_mac_addr_t default_netif_mac;
@@ -86,5 +86,9 @@ typedef struct __attribute__((__packed__)) {
     uint16_t period_seconds;
     vs_mac_addr_t recipient_mac;
 } vs_info_poll_request_t;
+
+typedef struct __attribute__((__packed__)) {
+    uint8_t name[DEVICE_NAME_SZ_MAX];
+} vs_info_name_request_t;
 
 #endif // VS_SECURITY_SDK_SNAP_SERVICES_INFO_PRIVATE_H

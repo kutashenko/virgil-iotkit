@@ -61,6 +61,7 @@ static vs_device_manufacture_id_t _manufacture_id;
 static vs_device_type_t _device_type;
 static vs_device_serial_t _device_serial;
 static uint32_t _device_roles = 0; // See vs_snap_device_role_e
+static char _device_name[DEVICE_NAME_SZ_MAX] = {0};
 
 static vs_netif_process_cb_t _preprocessor_cb = NULL;
 
@@ -703,6 +704,25 @@ vs_snap_device_serial(void) {
 uint32_t
 vs_snap_device_roles(void) {
     return _device_roles;
+}
+
+/******************************************************************************/
+const char *
+vs_snap_device_name(void) {
+    return (const char *)_device_name;
+}
+
+/******************************************************************************/
+vs_status_e
+vs_snap_init_device_name(const char *name) {
+    CHECK_NOT_ZERO_RET(name, VS_CODE_ERR_ZERO_ARGUMENT);
+    CHECK_RET(strnlen(name, DEVICE_NAME_SZ_MAX) >= DEVICE_NAME_SZ_MAX,
+              VS_CODE_ERR_INCORRECT_PARAMETER,
+              "Device name size is greater than 63 symbols.");
+
+    strcpy(_device_name, name);
+
+    return VS_CODE_OK;
 }
 
 /******************************************************************************/

@@ -220,3 +220,13 @@ VSQSnapInfoClient::timerEvent(QTimerEvent *event) {
         }
     }
 }
+
+bool
+VSQSnapInfoClient::onSetName(const VSQMac &deviceMac, const QString &name) {
+    vs_mac_addr_t mac = deviceMac;
+    if (VS_CODE_OK != vs_snap_info_set_name(vs_snap_netif_routing(), &mac, name.toStdString().c_str())) {
+        VS_LOG_ERROR("Unable to set Device name");
+        return false;
+    }
+    return false;
+}
