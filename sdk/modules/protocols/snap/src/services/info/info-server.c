@@ -178,9 +178,7 @@ _fill_ginf_data(vs_info_ginf_response_t *general_info) {
               "Cannot get MAC for Default Network Interface");
 
     size_t name_len = strnlen(vs_snap_device_name(), DEVICE_NAME_SZ_MAX);
-    CHECK_RET(name_len < DEVICE_NAME_SZ_MAX,
-              VS_CODE_ERR_INCORRECT_PARAMETER,
-              "Device name is too long");
+    CHECK_RET(name_len < DEVICE_NAME_SZ_MAX, VS_CODE_ERR_INCORRECT_PARAMETER, "Device name is too long");
     VS_IOT_MEMCPY(general_info->name, vs_snap_device_name(), name_len);
     VS_IOT_MEMCPY(general_info->manufacture_id, vs_snap_device_manufacture(), sizeof(vs_device_manufacture_id_t));
     VS_IOT_MEMCPY(general_info->device_type, vs_snap_device_type(), sizeof(vs_device_type_t));
@@ -207,13 +205,9 @@ _snam_request_processing(const uint8_t *request,
 
     // Check input parameters
     CHECK_NOT_ZERO_RET(request, VS_CODE_ERR_NULLPTR_ARGUMENT);
-    CHECK_RET(request_sz == sizeof(vs_info_name_request_t),
-              VS_CODE_ERR_NULLPTR_ARGUMENT,
-              "Incorrect size of request");
+    CHECK_RET(request_sz == sizeof(vs_info_name_request_t), VS_CODE_ERR_NULLPTR_ARGUMENT, "Incorrect size of request");
     CHECK_NOT_ZERO_RET(response, VS_CODE_ERR_NULLPTR_ARGUMENT);
-    CHECK_RET(response_buf_sz >= sizeof(vs_info_ginf_response_t),
-              VS_CODE_ERR_NULLPTR_ARGUMENT,
-              "");
+    CHECK_RET(response_buf_sz >= sizeof(vs_info_ginf_response_t), VS_CODE_ERR_NULLPTR_ARGUMENT, "");
 
     VS_LOG_DEBUG(">>> Set device name: %s", (const char *)name_info->name);
 

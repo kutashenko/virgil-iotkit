@@ -373,13 +373,9 @@ vs_files_remove(const char *folder, const char *file_name) {
 /******************************************************************************/
 bool
 vs_files_set_base_dir(const char *base_dir) {
-    struct passwd *pwd = NULL;
-
     assert(base_dir && base_dir[0]);
 
-    pwd = getpwuid(getuid());
-
-    if (VS_IOT_SNPRINTF(_base_dir, FILENAME_MAX, "%s/%s/%s", pwd->pw_dir, "keystorage", base_dir) <= 0) {
+    if (VS_IOT_SNPRINTF(_base_dir, FILENAME_MAX, "%s", base_dir) <= 0) {
         return false;
     }
     return true;

@@ -57,7 +57,7 @@
 #include <virgil/iot/protocols/snap/snap-structs.h>
 #include <virgil/iot/status_code/status_code.h>
 
-#define DEVICE_NAME_SZ_MAX  64
+#define DEVICE_NAME_SZ_MAX 64
 
 #ifdef __cplusplus
 namespace VirgilIoTKit {

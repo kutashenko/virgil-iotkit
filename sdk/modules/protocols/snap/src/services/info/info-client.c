@@ -140,9 +140,9 @@ vs_snap_info_set_name(const vs_netif_t *netif, const vs_mac_addr_t *mac, const c
     // TODO: Normalize byte order
 
     // Send request
-    STATUS_CHECK_RET(vs_snap_send_request(
-            netif, mac, VS_INFO_SERVICE_ID, VS_INFO_SNAM, (uint8_t *)&request, sizeof(request)),
-                     "Cannot send request");
+    STATUS_CHECK_RET(
+            vs_snap_send_request(netif, mac, VS_INFO_SERVICE_ID, VS_INFO_SNAM, (uint8_t *)&request, sizeof(request)),
+            "Cannot send request");
 
     return VS_CODE_OK;
 }
