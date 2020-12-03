@@ -32,38 +32,27 @@
 //
 //  Lead Maintainer: Virgil Security Inc. <support@virgilsecurity.com>
 
-/*! \file VSQSnapServiceBase.h
- * \brief SNAP protocol's service interface
- *
- * #VSQSnapServiceBase is used as base class for SNAP protocol services. #VSQSnapInfoClient is INFO Client service based
- * on this interface.
- *
- */
+#ifndef VS_SECURITY_SDK_SNAP_SERVICES_SCRT_SERVER_H
+#define VS_SECURITY_SDK_SNAP_SERVICES_SCRT_SERVER_H
 
-#ifndef _VIRGIL_IOTKIT_QT_SNAP_SERVICE_H_
-#define _VIRGIL_IOTKIT_QT_SNAP_SERVICE_H_
+#if SCRT_SERVER
 
 #include <virgil/iot/protocols/snap/snap-structs.h>
-#include <virgil/iot/qt/helpers/VSQFeatures.h>
+#include <virgil/iot/protocols/snap/scrt/scrt-structs.h>
 
-/** SNAP service base class */
-class VSQSnapServiceBase {
-public:
-    virtual ~VSQSnapServiceBase() = default;
+#ifdef __cplusplus
+namespace VirgilIoTKit {
+extern "C" {
+#endif
 
-    /** Get service interface
-     *
-     * \return Service interface
-     */
-    virtual const VirgilIoTKit::vs_snap_service_t *
-    serviceInterface() = 0;
+const vs_snap_service_t *
+vs_snap_scrt_server(vs_secmodule_impl_t *secmodule);
 
-    /** Get service name
-     *
-     * \return Service name
-     */
-    virtual const QString &
-    serviceName() const = 0;
-};
+#ifdef __cplusplus
+} // extern "C"
+} // namespace VirgilIoTKit
+#endif
 
-#endif // _VIRGIL_IOTKIT_QT_SNAP_SERVICE_H_
+#endif // SCRT_SERVER
+
+#endif // VS_SECURITY_SDK_SNAP_SERVICES_SCRT_SERVER_H

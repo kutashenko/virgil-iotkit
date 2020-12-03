@@ -32,38 +32,48 @@
 //
 //  Lead Maintainer: Virgil Security Inc. <support@virgilsecurity.com>
 
-/*! \file VSQSnapServiceBase.h
- * \brief SNAP protocol's service interface
- *
- * #VSQSnapServiceBase is used as base class for SNAP protocol services. #VSQSnapInfoClient is INFO Client service based
- * on this interface.
- *
- */
+#if SCRT_CLIENT
 
-#ifndef _VIRGIL_IOTKIT_QT_SNAP_SERVICE_H_
-#define _VIRGIL_IOTKIT_QT_SNAP_SERVICE_H_
+#include <virgil/iot/protocols/snap/generated/snap_cvt.h>
+#include <private/snap-private.h>
+#include <virgil/iot/protocols/snap/scrt/scrt-client.h>
+#include <virgil/iot/protocols/snap/scrt/scrt-structs.h>
+#include <virgil/iot/protocols/snap/scrt/scrt-private.h>
+#include <virgil/iot/macros/macros.h>
+#include <virgil/iot/protocols/snap.h>
+#include <virgil/iot/logger/logger.h>
+#include <stdlib-config.h>
+#include <global-hal.h>
+#include <stdbool.h>
+#include <string.h>
 
-#include <virgil/iot/protocols/snap/snap-structs.h>
-#include <virgil/iot/qt/helpers/VSQFeatures.h>
+static vs_snap_service_t _scrt_client = {0};
+// static vs_snap_scrt_client_service_t _scrt_impl = {};
 
-/** SNAP service base class */
-class VSQSnapServiceBase {
-public:
-    virtual ~VSQSnapServiceBase() = default;
+/******************************************************************************/
+static vs_status_e
+_scrt_service_response_processor(const struct vs_netif_t *netif,
+                                 const vs_ethernet_header_t *eth_header,
+                                 vs_snap_element_t element_id,
+                                 bool is_ack,
+                                 const uint8_t *response,
+                                 const uint16_t response_sz) {
 
-    /** Get service interface
-     *
-     * \return Service interface
-     */
-    virtual const VirgilIoTKit::vs_snap_service_t *
-    serviceInterface() = 0;
+    return VS_CODE_ERR_NOT_IMPLEMENTED;
+}
 
-    /** Get service name
-     *
-     * \return Service name
-     */
-    virtual const QString &
-    serviceName() const = 0;
-};
+/******************************************************************************/
+const vs_snap_service_t *
+vs_snap_scrt_client(vs_snap_scrt_client_service_t impl) {
+    _scrt_client.user_data = 0;
+    _scrt_client.id = VS_SCRT_SERVICE_ID;
+    _scrt_client.request_process = NULL;
+    _scrt_client.response_process = _scrt_service_response_processor;
+    _scrt_client.periodical_process = NULL;
 
-#endif // _VIRGIL_IOTKIT_QT_SNAP_SERVICE_H_
+    return &_scrt_client;
+}
+
+/******************************************************************************/
+
+#endif // SCRT_CLIENT

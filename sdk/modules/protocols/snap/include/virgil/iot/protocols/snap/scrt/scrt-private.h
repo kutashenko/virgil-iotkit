@@ -32,38 +32,24 @@
 //
 //  Lead Maintainer: Virgil Security Inc. <support@virgilsecurity.com>
 
-/*! \file VSQSnapServiceBase.h
- * \brief SNAP protocol's service interface
- *
- * #VSQSnapServiceBase is used as base class for SNAP protocol services. #VSQSnapInfoClient is INFO Client service based
- * on this interface.
- *
- */
 
-#ifndef _VIRGIL_IOTKIT_QT_SNAP_SERVICE_H_
-#define _VIRGIL_IOTKIT_QT_SNAP_SERVICE_H_
+#ifndef VS_SECURITY_SDK_SNAP_SERVICES_SCRT_PRIVATE_H
+#define VS_SECURITY_SDK_SNAP_SERVICES_SCRT_PRIVATE_H
 
+#include <virgil/iot/protocols/snap/scrt/scrt-server.h>
+#include <virgil/iot/protocols/snap/scrt/scrt-structs.h>
+#include <virgil/iot/protocols/snap.h>
+#include <virgil/iot/status_code/status_code.h>
+#include <virgil/iot/trust_list/trust_list.h>
+#include <virgil/iot/trust_list/tl_structs.h>
 #include <virgil/iot/protocols/snap/snap-structs.h>
-#include <virgil/iot/qt/helpers/VSQFeatures.h>
 
-/** SNAP service base class */
-class VSQSnapServiceBase {
-public:
-    virtual ~VSQSnapServiceBase() = default;
+// mute "error: multi-character character constant" message
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmultichar"
+typedef enum { VS_SCRT_SERVICE_ID = HTONL_IN_COMPILE_TIME('SCRT') } vs_scrt_t;
 
-    /** Get service interface
-     *
-     * \return Service interface
-     */
-    virtual const VirgilIoTKit::vs_snap_service_t *
-    serviceInterface() = 0;
+// typedef enum {} vs_snap_scrt_element_e;
+#pragma GCC diagnostic pop
 
-    /** Get service name
-     *
-     * \return Service name
-     */
-    virtual const QString &
-    serviceName() const = 0;
-};
-
-#endif // _VIRGIL_IOTKIT_QT_SNAP_SERVICE_H_
+#endif // VS_SECURITY_SDK_SNAP_SERVICES_SCRT_PRIVATE_H

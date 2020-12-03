@@ -156,15 +156,6 @@ public:
         return m_snapService;
     }
 
-    /** Get service feature
-     *
-     * \return Service feature
-     */
-    VSQFeatures::EFeature
-    serviceFeature() const override {
-        return VSQFeatures::SNAP_INFO_CLIENT;
-    }
-
     /** Get service name
      *
      * \return Service name
