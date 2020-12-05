@@ -124,7 +124,7 @@ _keypair_create_mbedtls(mbedtls_fast_ec_type_t fast_ec_type,
 }
 
 /******************************************************************************/
-static int
+vs_status_e
 _keypair_create_internal(vs_secmodule_keypair_type_e keypair_type,
                          uint8_t *public_key,
                          uint16_t pubkey_buf_sz,

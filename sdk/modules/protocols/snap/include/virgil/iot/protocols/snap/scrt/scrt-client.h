@@ -48,6 +48,7 @@ extern "C" {
 
 /** SCRT client implementation */
 typedef struct {
+    bool dummy;
 } vs_snap_scrt_client_service_t;
 
 const vs_snap_service_t *

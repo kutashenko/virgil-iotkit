@@ -67,6 +67,15 @@ vs_secmodule_keypair_get_prvkey(vs_iot_secmodule_slot_e slot,
                                 vs_secmodule_keypair_type_e *keypair_type);
 
 vs_status_e
+_keypair_create_internal(vs_secmodule_keypair_type_e keypair_type,
+                         uint8_t *public_key,
+                         uint16_t pubkey_buf_sz,
+                         uint16_t *public_key_sz,
+                         uint8_t *private_key,
+                         uint16_t prvkey_buf_sz,
+                         uint16_t *private_key_sz);
+
+vs_status_e
 _fill_slots_impl(vs_secmodule_impl_t *secmodule_impl, vs_storage_op_ctx_t *slots_storage_impl);
 
 vs_status_e
