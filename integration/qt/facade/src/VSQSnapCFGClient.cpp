@@ -74,7 +74,15 @@ VSQSnapCfgClient::onConfigureDevices() {
     memset(&config, 0, sizeof(config));
     ::strcpy(reinterpret_cast<char *>(config.ssid), m_ssid.toStdString().c_str());
     ::strcpy(reinterpret_cast<char *>(config.pass), m_pass.toStdString().c_str());
-    if (VS_CODE_OK != vs_snap_cfg_wifi_configure_device(vs_snap_netif_routing(),
+
+    const vs_netif_t *netif;
+    if (m_defaultNetif.isNull()) {
+        netif = vs_snap_netif_routing();
+    } else {
+        netif = m_defaultNetif->lowLevelNetif();
+    }
+
+    if (VS_CODE_OK != vs_snap_cfg_wifi_configure_device(netif,
                                  vs_snap_broadcast_mac(),
                                  &config)) {
         VS_LOG_ERROR("Cannot configure device");
