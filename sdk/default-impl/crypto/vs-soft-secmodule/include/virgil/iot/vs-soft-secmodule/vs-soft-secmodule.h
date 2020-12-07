@@ -67,6 +67,11 @@ function in app-storage.c file.
 #include <virgil/iot/secmodule/secmodule.h>
 #include <virgil/iot/storage_hal/storage_hal.h>
 
+#ifdef __cplusplus
+namespace VirgilIoTKit {
+extern "C" {
+#endif
+
 #define VS_SLOTS_STORAGE_MAX_SIZE (1024)
 
 /** Initialize software crypto implementation
@@ -84,5 +89,10 @@ vs_soft_secmodule_impl(vs_storage_op_ctx_t *slots_storage_impl);
  */
 vs_status_e
 vs_soft_secmodule_deinit(void);
+
+#ifdef __cplusplus
+} // extern "C"
+} // namespace VirgilIoTKit
+#endif
 
 #endif // VS_SOFT_SECMODULE_H
