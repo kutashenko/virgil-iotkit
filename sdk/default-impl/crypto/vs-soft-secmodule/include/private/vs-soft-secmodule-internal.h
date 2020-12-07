@@ -41,6 +41,7 @@
 
 #define MAX_INTERNAL_SIGN_SIZE (180)
 #define MAX_INTERNAL_PUBKEY_SIZE (180)
+#define MAX_INTERNAL_PRIVKEY_SIZE (180)
 
 const vs_secmodule_impl_t *
 _soft_secmodule_intern(void);
