@@ -74,6 +74,11 @@ public:
         return name;
     }
 
+    Q_INVOKABLE void
+    setNetifRestriction(QSharedPointer<VSQNetifBase> restriction) {
+        m_defaultNetif = restriction;
+    }
+
 signals:
     void fireConfigurationDone();
     void fireConfigurationError();
@@ -96,6 +101,8 @@ private:
 
     QString m_ssid;
     QString m_pass;
+
+    QSharedPointer<VSQNetifBase> m_defaultNetif;
 };
 
 #endif // _VIRGIL_IOTKIT_QT_SNAP_CFG_CLIENT_SERVICE_H_
