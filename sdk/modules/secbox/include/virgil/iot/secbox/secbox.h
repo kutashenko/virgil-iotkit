@@ -152,7 +152,7 @@ vs_secbox_save(vs_secbox_type_t type, vs_storage_element_id_t id, const uint8_t 
  * \return #VS_CODE_OK in case of success or error code.
  */
 vs_status_e
-vs_secbox_load(vs_storage_element_id_t id, uint8_t *data, size_t data_sz);
+vs_secbox_load(vs_storage_element_id_t id, uint8_t *data, size_t buf_sz, size_t *data_sz);
 
 
 /** Delete Security Box element

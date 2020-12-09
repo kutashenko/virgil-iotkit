@@ -232,12 +232,11 @@ terminate:
 
 /******************************************************************************/
 vs_status_e
-vs_secbox_load(vs_storage_element_id_t id, uint8_t *data, size_t data_sz) {
+vs_secbox_load(vs_storage_element_id_t id, uint8_t *data, size_t buf_sz, size_t *data_sz) {
     vs_status_e res;
     uint8_t type;
     vs_storage_file_t f = NULL;
     uint8_t *data_load = NULL;
-    size_t data_load_sz;
 
     uint16_t sign_sz = (uint16_t)vs_secmodule_get_signature_len(VS_KEYPAIR_EC_SECP256R1);
 
@@ -261,45 +260,46 @@ vs_secbox_load(vs_storage_element_id_t id, uint8_t *data, size_t data_sz) {
 
     switch (type) {
     case VS_SECBOX_SIGNED_AND_ENCRYPTED:
-        data_load_sz = file_sz - sign_sz - 1;
-        data_load = VS_IOT_MALLOC(data_load_sz);
+        *data_sz = file_sz - sign_sz - 1;
+        data_load = VS_IOT_MALLOC(*data_sz);
         if (NULL == data_load) {
             res = VS_CODE_ERR_NO_MEMORY;
             goto terminate;
         }
 
         res = VS_CODE_ERR_FILE_WRITE;
-        STATUS_CHECK(_storage_ctx->impl_func.load(_storage_ctx->impl_data, f, 1, data_load, data_load_sz),
+        STATUS_CHECK(_storage_ctx->impl_func.load(_storage_ctx->impl_data, f, 1, data_load, *data_sz),
                      "Can't load data from file");
-        STATUS_CHECK(_secbox_verify_signature(f, type, data_load, data_load_sz), "Can't verify signature");
+        STATUS_CHECK(_secbox_verify_signature(f, type, data_load, *data_sz), "Can't verify signature");
         STATUS_CHECK(vs_secmodule_ecies_decrypt(_secmodule,
                                                 id,
                                                 sizeof(vs_storage_element_id_t),
                                                 (uint8_t *)data_load,
-                                                data_load_sz,
+                                                *data_sz,
                                                 data,
-                                                data_sz,
-                                                &data_load_sz),
+                                                buf_sz,
+                                                data_sz),
                      "Can't descrypt DHA384 AES256");
-
-        CHECK(data_sz == data_load_sz, "Can't read requested data quantity");
+#if 0
+        CHECK(buf_sz == data_load_sz, "Can't read requested data quantity");
+#endif
         break;
 
     case VS_SECBOX_SIGNED:
-        data_load_sz = file_sz - sign_sz - 1;
-
-        if (data_sz != data_load_sz) {
+        *data_sz = file_sz - sign_sz - 1;
+#if 0
+        if (buf_sz != data_load_sz) {
             VS_LOG_ERROR("Can't read requested data quantity");
             goto terminate;
         }
-
-        res = _storage_ctx->impl_func.load(_storage_ctx->impl_data, f, 1, data, data_load_sz);
+#endif
+        res = _storage_ctx->impl_func.load(_storage_ctx->impl_data, f, 1, data, *data_sz);
         if (VS_CODE_OK != res) {
             VS_LOG_ERROR("Can't load data from file");
             goto terminate;
         }
 
-        res = _secbox_verify_signature(f, type, data, data_load_sz);
+        res = _secbox_verify_signature(f, type, data, *data_sz);
 
         break;
     default:
