@@ -244,6 +244,45 @@ vs_secmodule_keypair_create(vs_iot_secmodule_slot_e slot, vs_secmodule_keypair_t
 
 /********************************************************************************/
 vs_status_e
+vs_secmodule_keypair_set(vs_iot_secmodule_slot_e slot,
+                         vs_secmodule_keypair_type_e keypair_type,
+                         const uint8_t *private_key,
+                         uint16_t private_key_sz,
+                         const uint8_t *public_key,
+                         uint16_t public_key_sz) {
+    vs_status_e ret_code;
+    int32_t slot_sz = _get_slot_size(slot);
+    const vs_secmodule_impl_t *_secmodule = _soft_secmodule_intern();
+
+    const size_t required_slot_sz = private_key_sz + public_key_sz + sizeof(keypair_storage_data);
+
+    CHECK_NOT_ZERO_RET(_secmodule, VS_CODE_ERR_NULLPTR_ARGUMENT);
+    CHECK_NOT_ZERO_RET(private_key, VS_CODE_ERR_NULLPTR_ARGUMENT);
+    CHECK_NOT_ZERO_RET(private_key_sz, VS_CODE_ERR_NULLPTR_ARGUMENT);
+    CHECK_RET(slot_sz > 0, VS_CODE_ERR_INCORRECT_PARAMETER, "Incorrect slot number");
+    CHECK_RET(slot_sz > required_slot_sz, VS_CODE_ERR_INCORRECT_PARAMETER, "Slot size too small");
+
+    uint8_t buf[slot_sz];
+    keypair_storage_data *keypair_storage = (keypair_storage_data *)buf;
+
+    keypair_storage->keypair_type = keypair_type;
+    keypair_storage->private_key_sz = (uint16_t)private_key_sz;
+    keypair_storage->public_key_sz = (uint16_t)public_key_sz;
+
+    VS_IOT_MEMCPY(keypair_storage->data, private_key, private_key_sz);
+    if (public_key) {
+        VS_IOT_MEMCPY(keypair_storage->data + private_key_sz, public_key, public_key_sz);
+    }
+
+    STATUS_CHECK_RET(_secmodule->slot_save(slot, buf, required_slot_sz),
+                     "Unable to save keypair buffer to the slot %s",
+                     _get_slot_name(slot));
+
+    return VS_CODE_OK;
+}
+
+/********************************************************************************/
+vs_status_e
 vs_secmodule_keypair_get_pubkey(vs_iot_secmodule_slot_e slot,
                                 uint8_t *buf,
                                 uint16_t buf_sz,
@@ -351,6 +390,7 @@ _fill_keypair_impl(vs_secmodule_impl_t *secmodule_impl) {
     CHECK_NOT_ZERO_RET(secmodule_impl, VS_CODE_ERR_NULLPTR_ARGUMENT);
 
     secmodule_impl->create_keypair = vs_secmodule_keypair_create;
+    secmodule_impl->set_keypair = vs_secmodule_keypair_set;
     secmodule_impl->get_pubkey = vs_secmodule_keypair_get_pubkey;
 
     return VS_CODE_OK;

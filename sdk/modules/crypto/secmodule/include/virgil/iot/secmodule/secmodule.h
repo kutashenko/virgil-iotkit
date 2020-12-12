@@ -177,6 +177,13 @@ typedef vs_status_e (*vs_secmodule_hash_create_t)(vs_secmodule_hash_type_e hash_
 typedef vs_status_e (*vs_secmodule_keypair_create_t)(vs_iot_secmodule_slot_e slot,
                                                      vs_secmodule_keypair_type_e keypair_type);
 
+typedef vs_status_e (*vs_secmodule_keypair_set_t)(vs_iot_secmodule_slot_e slot,
+                                                  vs_secmodule_keypair_type_e keypair_type,
+                                                  const uint8_t *private_key,
+                                                  uint16_t private_key_sz,
+                                                  const uint8_t *public_key,
+                                                  uint16_t public_key_sz);
+
 /** Public key retrieval
  *
  * \note Before calling this function, you should call #vs_secmodule_keypair_create_t implementation first and store
@@ -469,6 +476,7 @@ typedef struct {
 
     // Key-pair in slot
     vs_secmodule_keypair_create_t create_keypair; /**< Key pair generation */
+    vs_secmodule_keypair_set_t set_keypair; /**< Save Key pair to slot */
     vs_secmodule_keypair_get_pubkey_t get_pubkey; /**< Get public key */
 
     // ECDSA
