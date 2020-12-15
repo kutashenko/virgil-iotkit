@@ -49,6 +49,10 @@
 #include <mbedtls/entropy.h>
 #include <mbedtls/ctr_drbg.h>
 
+#if !defined(SOFT_SECMODULE_EXTRA_DEBUG)
+#define SOFT_SECMODULE_EXTRA_DEBUG 0
+#endif
+
 typedef struct __attribute__((__packed__)) {
     vs_secmodule_keypair_type_e keypair_type;
     uint16_t private_key_sz;
@@ -321,10 +325,12 @@ vs_secmodule_keypair_get_pubkey(vs_iot_secmodule_slot_e slot,
 
     memcpy(buf, pubkey, *key_sz);
 
+#if SOFT_SECMODULE_EXTRA_DEBUG
     VS_LOG_DEBUG("Public key %d bytes from slot %s with keypair type %s has been loaded",
                  *key_sz,
                  _get_slot_name(slot),
                  vs_secmodule_keypair_type_descr(*keypair_type));
+#endif
 
     ret_code = VS_CODE_OK;
 
@@ -372,10 +378,12 @@ vs_secmodule_keypair_get_prvkey(vs_iot_secmodule_slot_e slot,
 
     memcpy(buf, keypair_storage->data, *key_sz);
 
+#if SOFT_SECMODULE_EXTRA_DEBUG
     VS_LOG_DEBUG("Private key %d bytes from slot %s with keypair type %s has been loaded",
                  *key_sz,
                  _get_slot_name(slot),
                  vs_secmodule_keypair_type_descr(*keypair_type));
+#endif
 
     ret_code = VS_CODE_OK;
 

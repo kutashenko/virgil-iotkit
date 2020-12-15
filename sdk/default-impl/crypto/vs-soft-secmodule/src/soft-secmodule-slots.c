@@ -94,7 +94,7 @@ vs_secmodule_slot_load(vs_iot_secmodule_slot_e slot, uint8_t *data, uint16_t buf
 
     // Get file size
     file_sz = _storage->impl_func.size(_storage->impl_data, id);
-    CHECK(file_sz > 0, "Slot size is wrong");
+    CHECK(file_sz > 0, "Slot is empty");
     CHECK(file_sz <= buf_sz, "Cannot read file because of small buffer");
 
     // Load data type to file
