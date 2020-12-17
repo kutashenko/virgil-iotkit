@@ -48,7 +48,49 @@
 #include <string.h>
 
 static vs_snap_service_t _scrt_client = {0};
-// static vs_snap_scrt_client_service_t _scrt_impl = {};
+ static vs_snap_scrt_client_service_t _scrt_impl = {};
+
+/******************************************************************************/
+vs_status_e
+vs_snap_scrt_get_info(const vs_netif_t *netif,
+                      const vs_mac_addr_t *mac) {
+    return VS_CODE_ERR_NOT_IMPLEMENTED;
+}
+
+/******************************************************************************/
+vs_status_e
+vs_snap_scrt_request_session_key(const vs_netif_t *netif,
+                                 const vs_mac_addr_t *mac) {
+    return VS_CODE_ERR_NOT_IMPLEMENTED;
+}
+
+/******************************************************************************/
+vs_status_e
+vs_snap_scrt_add_user(const vs_netif_t *netif,
+                      const vs_mac_addr_t *mac,
+                      vs_user_type_t user_type,
+                      const char *user_name) {
+    return VS_CODE_ERR_NOT_IMPLEMENTED;
+}
+
+/******************************************************************************/
+vs_status_e
+vs_snap_scrt_remove_user(const vs_netif_t *netif,
+                         const vs_mac_addr_t *mac,
+                         vs_user_type_t user_type,
+                         const char *user_name) {
+    return VS_CODE_ERR_NOT_IMPLEMENTED;
+}
+
+/******************************************************************************/
+vs_status_e
+vs_snap_scrt_get_users(const vs_netif_t *netif,
+                       const vs_mac_addr_t *mac,
+                       vs_user_type_t user_type,
+                       uint8_t offset,
+                       uint8_t max_amount) {
+    return VS_CODE_ERR_NOT_IMPLEMENTED;
+}
 
 /******************************************************************************/
 static vs_status_e
@@ -58,8 +100,45 @@ _scrt_service_response_processor(const struct vs_netif_t *netif,
                                  bool is_ack,
                                  const uint8_t *response,
                                  const uint16_t response_sz) {
+    vs_snap_transaction_id_t id = 0;
+    vs_status_e res = is_ack ? VS_CODE_OK : VS_CODE_ERR_SNAP_UNKNOWN;
 
-    return VS_CODE_ERR_NOT_IMPLEMENTED;
+    switch (element_id) {
+
+    case VS_SCRT_INFO:
+        if (_scrt_impl.scrt_client_info_cb) {
+            _scrt_impl.scrt_client_info_cb(id, res);
+        }
+        break;
+
+    case VS_SCRT_GSEK:
+        if (_scrt_impl.scrt_client_session_key_cb) {
+            _scrt_impl.scrt_client_session_key_cb(id, res);
+        }
+        break;
+
+    case VS_SCRT_AUSR:
+        if (_scrt_impl.scrt_client_add_user_cb) {
+            _scrt_impl.scrt_client_add_user_cb(id, res);
+        }
+        break;
+
+    case VS_SCRT_RUSR:
+        if (_scrt_impl.scrt_client_remove_user_cb) {
+            _scrt_impl.scrt_client_remove_user_cb(id, res);
+        }
+        break;
+
+    case VS_SCRT_GUSR:
+        if (_scrt_impl.scrt_client_get_users_cb) {
+            _scrt_impl.scrt_client_get_users_cb(id, res);
+        }
+        break;
+
+    default: {}
+    }
+
+    return VS_CODE_OK;
 }
 
 /******************************************************************************/

@@ -46,14 +46,50 @@ extern "C" {
 #endif
 
 
+typedef vs_status_e (*vs_snap_scrt_client_info_cb_t)(vs_snap_transaction_id_t id, vs_status_e res);
+typedef vs_status_e (*vs_snap_scrt_client_session_key_cb_t)(vs_snap_transaction_id_t id, vs_status_e res);
+typedef vs_status_e (*vs_snap_scrt_client_add_user_cb_t)(vs_snap_transaction_id_t id, vs_status_e res);
+typedef vs_status_e (*vs_snap_scrt_client_remove_user_cb_t)(vs_snap_transaction_id_t id, vs_status_e res);
+typedef vs_status_e (*vs_snap_scrt_client_get_users_cb_t)(vs_snap_transaction_id_t id, vs_status_e res);
+
 /** SCRT client implementation */
 typedef struct {
-    bool dummy;
+    vs_snap_scrt_client_info_cb_t scrt_client_info_cb;
+    vs_snap_scrt_client_session_key_cb_t scrt_client_session_key_cb;
+    vs_snap_scrt_client_add_user_cb_t scrt_client_add_user_cb;
+    vs_snap_scrt_client_remove_user_cb_t scrt_client_remove_user_cb;
+    vs_snap_scrt_client_get_users_cb_t scrt_client_get_users_cb;
 } vs_snap_scrt_client_service_t;
 
 const vs_snap_service_t *
 vs_snap_scrt_client(vs_snap_scrt_client_service_t impl);
 
+vs_status_e
+vs_snap_scrt_get_info(const vs_netif_t *netif,
+                      const vs_mac_addr_t *mac);
+
+vs_status_e
+vs_snap_scrt_request_session_key(const vs_netif_t *netif,
+                                 const vs_mac_addr_t *mac);
+
+vs_status_e
+vs_snap_scrt_add_user(const vs_netif_t *netif,
+                      const vs_mac_addr_t *mac,
+                      vs_user_type_t user_type,
+                      const char *user_name);
+
+vs_status_e
+vs_snap_scrt_remove_user(const vs_netif_t *netif,
+                         const vs_mac_addr_t *mac,
+                         vs_user_type_t user_type,
+                         const char *user_name);
+
+vs_status_e
+vs_snap_scrt_get_users(const vs_netif_t *netif,
+                         const vs_mac_addr_t *mac,
+                         vs_user_type_t user_type,
+                         uint8_t offset,
+                         uint8_t max_amount);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -39,14 +39,22 @@
 
 #include <virgil/iot/protocols/snap/snap-structs.h>
 #include <virgil/iot/protocols/snap/scrt/scrt-structs.h>
+#include <virgil/iot/secmodule/secmodule.h>
 
 #ifdef __cplusplus
 namespace VirgilIoTKit {
 extern "C" {
 #endif
 
+//typedef vs_status_e (*vs_snap_scrt_server_get_users_cb_t)(vs_snap_transaction_id_t id, vs_status_e res);
+
+/** SCRT client implementation */
+typedef struct {
+    uint8_t dummy;
+} vs_snap_scrt_server_service_t;
+
 const vs_snap_service_t *
-vs_snap_scrt_server(vs_secmodule_impl_t *secmodule);
+vs_snap_scrt_server(vs_secmodule_impl_t *secmodule, vs_snap_scrt_server_service_t impl);
 
 #ifdef __cplusplus
 } // extern "C"

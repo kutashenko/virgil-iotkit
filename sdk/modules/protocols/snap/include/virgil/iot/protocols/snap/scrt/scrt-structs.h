@@ -43,6 +43,13 @@ namespace VirgilIoTKit {
 extern "C" {
 #endif
 
+#define SCRT_SESSION_KEY_SZ (32)
+#define SCRT_USER_NAME_SZ_MAX (64)
+typedef enum {
+    VS_USER_UNKNOWN,
+    VS_USER_OWNER,
+    VS_USER_GUEST
+} vs_user_type_t;
 
 #ifdef __cplusplus
 } // extern "C"
