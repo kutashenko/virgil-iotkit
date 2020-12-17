@@ -270,6 +270,7 @@ typedef enum {
 /** SNAP packet header
  */
 typedef struct __attribute__((__packed__)) {
+    uint32_t protocol_version;                              /**< Current version of protocol */
     vs_snap_transaction_id_t transaction_id;                /**< Transaction ID */
     vs_snap_service_id_t service_id; /**< SNAP service */   // CODEGEN: SKIP
     vs_snap_element_t element_id; /**< Service's command */ // CODEGEN: SKIP
