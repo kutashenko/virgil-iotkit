@@ -52,6 +52,8 @@ namespace VirgilIoTKit {
 extern "C" {
 #endif
 
+#define DEVICE_NAME_SZ_MAX (64)
+
 /** Device information
  *
  * Device information as parameter for #vs_snap_info_start_notif_cb_t function
@@ -78,13 +80,19 @@ typedef struct {
  *
  * Device general information as parameter for #vs_snap_info_general_cb_t call
  */
+
 typedef struct {
-    uint8_t manufacture_id[VS_DEVICE_MANUFACTURE_ID_SIZE]; /**< Manufacture ID*/
+    vs_protocol_version_t protocol_version;
+    uint8_t name[DEVICE_NAME_SZ_MAX];                      /**< Device Name */
+    uint8_t manufacture_id[VS_DEVICE_MANUFACTURE_ID_SIZE]; /**< Manufacture ID */
     uint8_t device_type[VS_DEVICE_TYPE_SIZE];              /**< Device type */
     uint8_t default_netif_mac[ETH_ADDR_LEN];               /**< Default network interface MAC address*/
     uint32_t device_roles;                                 /**< Mask based on #vs_snap_device_role_e elements */
     vs_file_version_unpacked_t fw_ver;                     /**< Firmware version */
     vs_file_version_unpacked_t tl_ver;                     /**< Trust List version */
+    uint8_t has_provision;                                 /**< Device requires credentials */
+    uint8_t has_owner;                                     /**< Device has owner */
+    uint8_t need_connection_creds;                         /**< Device requires connection credentials */
 } vs_info_general_t;
 
 /** Device statistics

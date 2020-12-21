@@ -151,6 +151,7 @@ VSQSnapInfoClient::statistics(vs_info_statistics_t *statistics) {
 
 bool
 VSQSnapInfoClient::changePolling(std::initializer_list<EPolling> pollingOptions,
+                                 const vs_netif_t *netif,
                                  const VSQMac &deviceMac,
                                  bool enable,
                                  quint16 periodSeconds) {

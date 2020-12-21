@@ -60,6 +60,7 @@ typedef enum {
 #pragma GCC diagnostic pop
 
 typedef struct __attribute__((__packed__)) {
+    vs_protocol_version_t protocol_version;
     uint8_t name[DEVICE_NAME_SZ_MAX];
     vs_device_manufacture_id_t manufacture_id;
     vs_device_type_t device_type;
@@ -67,6 +68,9 @@ typedef struct __attribute__((__packed__)) {
     vs_file_version_t fw_version;
     vs_file_version_t tl_version;
     uint32_t device_roles; // vs_snap_device_role_e
+    uint8_t has_provision;
+    uint8_t has_owner;
+    uint8_t need_connection_creds;
 } vs_info_ginf_response_t;
 
 typedef struct __attribute__((__packed__)) {

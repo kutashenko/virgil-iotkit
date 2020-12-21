@@ -177,6 +177,7 @@ public:
      */
     bool
     changePolling(std::initializer_list<EPolling> pollingOptions,
+                  const VirgilIoTKit::vs_netif_t * netif =  VirgilIoTKit::vs_snap_netif_routing(),
                   const VSQMac &deviceMac = broadcastMac,
                   bool enable = true,
                   quint16 periodSeconds = 1);
@@ -196,9 +197,11 @@ public slots:
      * \return
      */
     bool
-    onStartFullPolling(const VSQMac &deviceMac = broadcastMac, quint16 periodSeconds = 3) {
+    onStartFullPolling(const VSQMac &deviceMac = broadcastMac,
+                       const VirgilIoTKit::vs_netif_t * netif = VirgilIoTKit::vs_snap_netif_routing(),
+                       quint16 periodSeconds = 3) {
         return changePolling(
-                {VSQSnapInfoClient::GENERAL_INFO, VSQSnapInfoClient::STATISTICS}, deviceMac, true, periodSeconds);
+                {VSQSnapInfoClient::GENERAL_INFO, VSQSnapInfoClient::STATISTICS}, netif, deviceMac, true, periodSeconds);
     }
 
     bool

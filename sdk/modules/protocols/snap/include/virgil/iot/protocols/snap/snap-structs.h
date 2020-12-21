@@ -266,11 +266,19 @@ typedef enum {
     VS_SNAP_FLAG_NACK = HTONL_IN_COMPILE_TIME(0x0002) /**< Notification about rejecting a packet */
 } vs_snap_flags_e;
 
+/** SNAP Version */
+
+typedef uint32_t vs_protocol_version_t;
+
+#define GUID_SZ (16)
+typedef uint8_t vs_network_id_t[GUID_SZ];
+
 /******************************************************************************/
 /** SNAP packet header
  */
 typedef struct __attribute__((__packed__)) {
-    uint32_t protocol_version;                              /**< Current version of protocol */
+    vs_protocol_version_t protocol_version;                 /**< Current version of protocol */
+    vs_network_id_t network_id;                             /**< Network ID */
     vs_snap_transaction_id_t transaction_id;                /**< Transaction ID */
     vs_snap_service_id_t service_id; /**< SNAP service */   // CODEGEN: SKIP
     vs_snap_element_t element_id; /**< Service's command */ // CODEGEN: SKIP
