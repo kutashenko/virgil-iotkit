@@ -57,9 +57,8 @@ vs_snap_scrt_get_info(const vs_netif_t *netif, const vs_mac_addr_t *mac) {
     CHECK_NOT_ZERO_RET(mac, VS_CODE_ERR_ZERO_ARGUMENT);
 
     // Send request
-    STATUS_CHECK_RET(
-            vs_snap_send_request(netif, mac, VS_SCRT_SERVICE_ID, VS_SCRT_INFO, NULL, 0),
-            "Cannot send request");
+    STATUS_CHECK_RET(vs_snap_send_request(netif, mac, VS_SCRT_SERVICE_ID, VS_SCRT_INFO, NULL, 0),
+                     "Cannot send request");
 
     return VS_CODE_OK;
 }
@@ -114,7 +113,7 @@ _scrt_service_response_processor(const struct vs_netif_t *netif,
     case VS_SCRT_INFO:
         CHECK_NOT_ZERO_RET(response_sz > sizeof(vs_scrt_info_response_t), VS_CODE_ERR_TOO_SMALL_BUFFER);
         if (_scrt_impl.scrt_client_info_cb) {
-            const vs_scrt_info_response_t * scrt_info = (vs_scrt_info_response_t *)response;
+            const vs_scrt_info_response_t *scrt_info = (vs_scrt_info_response_t *)response;
             _scrt_impl.scrt_client_info_cb(id, res, scrt_info);
         }
         break;

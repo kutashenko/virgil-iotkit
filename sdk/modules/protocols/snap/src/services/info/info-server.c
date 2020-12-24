@@ -185,6 +185,12 @@ _fill_ginf_data(vs_info_ginf_response_t *general_info) {
     general_info->fw_version = _firmware_ver;
     general_info->tl_version = _tl_ver;
     general_info->device_roles = vs_snap_device_roles();
+    general_info->has_provision = vs_provision_is_ready();
+
+    // TODO: Fill it
+    general_info->protocol_version = 1;
+    general_info->has_owner = 0;
+    general_info->need_connection_creds = 1;
 
     // Normalize byte order
     vs_info_ginf_response_t_encode(general_info);

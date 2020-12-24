@@ -715,7 +715,7 @@ vs_snap_device_name(void) {
 vs_status_e
 vs_snap_init_device_name(const char *name) {
     CHECK_NOT_ZERO_RET(name, VS_CODE_ERR_ZERO_ARGUMENT);
-    CHECK_RET(strnlen(name, DEVICE_NAME_SZ_MAX) >= DEVICE_NAME_SZ_MAX,
+    CHECK_RET(strnlen(name, DEVICE_NAME_SZ_MAX) < DEVICE_NAME_SZ_MAX,
               VS_CODE_ERR_INCORRECT_PARAMETER,
               "Device name size is greater than 63 symbols.");
 
