@@ -206,6 +206,12 @@ _ginf_request_processor(const uint8_t *request,
     VS_IOT_MEMCPY(general_info.device_type, ginf_request->device_type, VS_DEVICE_TYPE_SIZE);
     VS_IOT_MEMCPY(general_info.default_netif_mac, ginf_request->default_netif_mac.bytes, ETH_ADDR_LEN);
 
+    VS_IOT_MEMCPY(general_info.name, ginf_request->name, DEVICE_NAME_SZ_MAX);
+    general_info.protocol_version = ginf_request->protocol_version;
+    general_info.need_connection_creds = ginf_request->need_connection_creds;
+    general_info.has_owner = ginf_request->has_owner;
+    general_info.has_provision = ginf_request->has_provision;
+
     // Firmware version
     general_info.fw_ver.major = ginf_request->fw_version.major;
     general_info.fw_ver.minor = ginf_request->fw_version.minor;

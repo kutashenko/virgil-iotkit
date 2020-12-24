@@ -87,6 +87,16 @@ struct VSQDeviceInfo {
         m_mac = mac;
     }
 
+    bool
+    operator!=(const VSQDeviceInfo &d) const {
+        if (m_deviceName == d.m_deviceName) return false;
+        if (m_protocolVersion == d.m_protocolVersion) return false;
+        if (m_deviceRoles == d.m_deviceRoles) return false;
+        if (m_deviceType == d.m_deviceType) return false;
+
+        return true;
+    }
+
     /** Polling interval in seconds */
     quint16 m_pollingInterval;
 
@@ -125,6 +135,16 @@ struct VSQDeviceInfo {
 
     /** Device has statistics */
     bool m_hasStatistics;
+
+    QString m_deviceName;
+
+    uint32_t m_protocolVersion;
+
+    uint8_t m_hasProvision;
+
+    uint8_t m_hasOwner;
+
+    uint8_t m_needConnectionCreds;
 };
 
 /** SNAP protocol's INFO Client implementation

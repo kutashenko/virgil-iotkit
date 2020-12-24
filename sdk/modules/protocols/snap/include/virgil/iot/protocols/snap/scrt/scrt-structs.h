@@ -61,7 +61,7 @@ typedef struct __attribute__((__packed__)) {
 } vs_scrt_info_response_t;
 
 // --------------------------------------------------------
-//      SCRT::GSEK - Get SEssion Key    
+//      SCRT::GSEK - Get SEssion Key
 // --------------------------------------------------------
 // INFO: Must be encrypted asymmetrically
 typedef struct __attribute__((__packed__)) {

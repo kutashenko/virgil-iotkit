@@ -101,6 +101,13 @@ VSQSnapInfoClient::generalInfo(vs_info_general_t *generalData) {
     copyAndCheck(device.m_fwVer, generalData->fw_ver);
     copyAndCheck(device.m_tlVer, generalData->tl_ver);
 
+    auto rawName = reinterpret_cast<char*>(generalData->name);
+    device.m_deviceName = QString::fromUtf8(rawName, strnlen(rawName, DEVICE_NAME_SZ_MAX));
+    device.m_protocolVersion = generalData->protocol_version;
+    device.m_hasProvision = generalData->has_provision;
+    device.m_hasOwner = generalData->has_owner;
+    device.m_needConnectionCreds = generalData->need_connection_creds;
+
 #if defined(LOG_GENERAL_INFO)
     if (changed) {
         VS_LOG_DEBUG(
