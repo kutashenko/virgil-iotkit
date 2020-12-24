@@ -112,9 +112,10 @@ _scrt_service_response_processor(const struct vs_netif_t *netif,
     switch (element_id) {
 
     case VS_SCRT_INFO:
-        CHECK_NOT_ZERO_RET(response_sz > sizeof(vs_snap_scrt_i));
+        CHECK_NOT_ZERO_RET(response_sz > sizeof(vs_scrt_info_response_t), VS_CODE_ERR_TOO_SMALL_BUFFER);
         if (_scrt_impl.scrt_client_info_cb) {
-            _scrt_impl.scrt_client_info_cb(id, res);
+            const vs_scrt_info_response_t * scrt_info = (vs_scrt_info_response_t *)response;
+            _scrt_impl.scrt_client_info_cb(id, res, scrt_info);
         }
         break;
 
@@ -156,6 +157,8 @@ vs_snap_scrt_client(vs_snap_scrt_client_service_t impl) {
     _scrt_client.request_process = NULL;
     _scrt_client.response_process = _scrt_service_response_processor;
     _scrt_client.periodical_process = NULL;
+
+    _scrt_impl = impl;
 
     return &_scrt_client;
 }

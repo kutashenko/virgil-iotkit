@@ -258,6 +258,7 @@ void
 VSQNetifBLE::onNotification(const QLowEnergyCharacteristic & characteristic, const QByteArray & data) {
     Q_UNUSED(characteristic)
     if (isActive()) {
+        qDebug() << "IN : " << data.toHex();
         processData(data);
     }
 }

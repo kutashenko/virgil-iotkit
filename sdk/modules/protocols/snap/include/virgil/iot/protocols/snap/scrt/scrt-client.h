@@ -46,7 +46,8 @@ extern "C" {
 #endif
 
 
-typedef vs_status_e (*vs_snap_scrt_client_info_cb_t)(vs_snap_transaction_id_t id, vs_status_e res);
+typedef vs_status_e (*vs_snap_scrt_client_info_cb_t)(vs_snap_transaction_id_t id, vs_status_e res,
+                                                     const vs_scrt_info_response_t * scrt_info);
 typedef vs_status_e (*vs_snap_scrt_client_session_key_cb_t)(vs_snap_transaction_id_t id, vs_status_e res);
 typedef vs_status_e (*vs_snap_scrt_client_add_user_cb_t)(vs_snap_transaction_id_t id, vs_status_e res);
 typedef vs_status_e (*vs_snap_scrt_client_remove_user_cb_t)(vs_snap_transaction_id_t id, vs_status_e res);

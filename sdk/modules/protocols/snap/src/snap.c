@@ -499,6 +499,7 @@ vs_snap_send(const vs_netif_t *netif, const uint8_t *data, uint16_t data_sz) {
     }
 
     // Send message to certain network interface
+    _snap_set_src_mac(netif, (vs_snap_packet_t *)data);
     return netif->tx((vs_netif_t *)netif, data, data_sz);
 }
 

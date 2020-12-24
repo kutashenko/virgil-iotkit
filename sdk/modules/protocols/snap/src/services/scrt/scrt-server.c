@@ -72,6 +72,7 @@ _scrt_info_request_processor(const uint8_t *request,
     // Fill data
     vs_scrt_info_response_t *info_data = (vs_scrt_info_response_t *)response;
     info_data->provisioned = vs_provision_is_ready();
+    info_data->owners_count = 0; // TODO: Fill it
     STATUS_CHECK_RET(vs_provision_own_cert(&info_data->own_cert, cert_buf_sz), "Cannot load own certificate");
 
     *response_sz = sizeof(vs_scrt_info_response_t) + info_data->own_cert.key_sz + info_data->own_cert.signature_sz;
