@@ -32,6 +32,8 @@
 //
 //  Lead Maintainer: Virgil Security Inc. <support@virgilsecurity.com>
 
+// #define SCRT_SERVER 1
+
 #if SCRT_SERVER
 
 #include <virgil/iot/protocols/snap/scrt/scrt-server.h>
@@ -56,17 +58,34 @@ _scrt_info_request_processor(const uint8_t *request,
                              uint8_t *response,
                              const uint16_t response_buf_sz,
                              uint16_t *response_sz) {
-    VS_LOG_DEBUG("SCRT::INFO request");
-    return VS_CODE_ERR_NOT_IMPLEMENTED;
+    uint16_t cert_buf_sz;
+    vs_status_e ret_code;
+    // Check input parameters
+    CHECK_NOT_ZERO_RET(response, VS_CODE_ERR_INCORRECT_ARGUMENT);
+    CHECK_RET(response_buf_sz >= sizeof(vs_scrt_info_response_t),
+              VS_CODE_ERR_INCORRECT_ARGUMENT,
+              "Unsupported request structure vs_scrt_info_response_t");
+
+    // Calculate buffer size
+    cert_buf_sz = response_buf_sz - sizeof(vs_scrt_info_response_t);
+
+    // Fill data
+    vs_scrt_info_response_t *info_data = (vs_scrt_info_response_t *)response;
+    info_data->provisioned = vs_provision_is_ready();
+    STATUS_CHECK_RET(vs_provision_own_cert(&info_data->own_cert, cert_buf_sz), "Cannot load own certificate");
+
+    *response_sz = sizeof(vs_scrt_info_response_t) + info_data->own_cert.key_sz + info_data->own_cert.signature_sz;
+
+    return VS_CODE_OK;
 }
 
 /******************************************************************/
 static vs_status_e
 _scrt_get_session_key_request_processor(const uint8_t *request,
-                             const uint16_t request_sz,
-                             uint8_t *response,
-                             const uint16_t response_buf_sz,
-                             uint16_t *response_sz) {
+                                        const uint16_t request_sz,
+                                        uint8_t *response,
+                                        const uint16_t response_buf_sz,
+                                        uint16_t *response_sz) {
     VS_LOG_DEBUG("SCRT::GSEK request");
     return VS_CODE_ERR_NOT_IMPLEMENTED;
 }
@@ -74,10 +93,10 @@ _scrt_get_session_key_request_processor(const uint8_t *request,
 /******************************************************************/
 static vs_status_e
 _scrt_add_user_request_processor(const uint8_t *request,
-                                        const uint16_t request_sz,
-                                        uint8_t *response,
-                                        const uint16_t response_buf_sz,
-                                        uint16_t *response_sz) {
+                                 const uint16_t request_sz,
+                                 uint8_t *response,
+                                 const uint16_t response_buf_sz,
+                                 uint16_t *response_sz) {
     VS_LOG_DEBUG("SCRT::AUSR request");
     return VS_CODE_ERR_NOT_IMPLEMENTED;
 }
@@ -85,10 +104,10 @@ _scrt_add_user_request_processor(const uint8_t *request,
 /******************************************************************/
 static vs_status_e
 _scrt_remove_user_request_processor(const uint8_t *request,
-                                 const uint16_t request_sz,
-                                 uint8_t *response,
-                                 const uint16_t response_buf_sz,
-                                 uint16_t *response_sz) {
+                                    const uint16_t request_sz,
+                                    uint8_t *response,
+                                    const uint16_t response_buf_sz,
+                                    uint16_t *response_sz) {
     VS_LOG_DEBUG("SCRT::RUSR request");
     return VS_CODE_ERR_NOT_IMPLEMENTED;
 }
@@ -96,10 +115,10 @@ _scrt_remove_user_request_processor(const uint8_t *request,
 /******************************************************************/
 static vs_status_e
 _scrt_get_users_request_processor(const uint8_t *request,
-                                    const uint16_t request_sz,
-                                    uint8_t *response,
-                                    const uint16_t response_buf_sz,
-                                    uint16_t *response_sz) {
+                                  const uint16_t request_sz,
+                                  uint8_t *response,
+                                  const uint16_t response_buf_sz,
+                                  uint16_t *response_sz) {
     VS_LOG_DEBUG("SCRT::GUSR request");
     return VS_CODE_ERR_NOT_IMPLEMENTED;
 }
@@ -107,13 +126,13 @@ _scrt_get_users_request_processor(const uint8_t *request,
 /******************************************************************************/
 static vs_status_e
 _scrt_request_processor(const struct vs_netif_t *netif,
-                       const vs_ethernet_header_t *eth_header,
-                       vs_snap_element_t element_id,
-                       const uint8_t *request,
-                       const uint16_t request_sz,
-                       uint8_t *response,
-                       const uint16_t response_buf_sz,
-                       uint16_t *response_sz) {
+                        const vs_ethernet_header_t *eth_header,
+                        vs_snap_element_t element_id,
+                        const uint8_t *request,
+                        const uint16_t request_sz,
+                        uint8_t *response,
+                        const uint16_t response_buf_sz,
+                        uint16_t *response_sz) {
     (void)netif;
 
     *response_sz = 0;

@@ -77,12 +77,17 @@ terminate:
 static vs_status_e
 vs_secmodule_slot_load(vs_iot_secmodule_slot_e slot, uint8_t *data, uint16_t buf_sz, uint16_t *out_sz) {
     CHECK_NOT_ZERO_RET(_storage, VS_CODE_ERR_NULLPTR_ARGUMENT);
+    CHECK_NOT_ZERO_RET(out_sz, VS_CODE_ERR_NULLPTR_ARGUMENT);
+
     vs_storage_file_t f;
     vs_storage_element_id_t id;
     const char *slot_name = _get_slot_name(slot);
-    vs_status_e res = VS_CODE_ERR_FILE_WRITE;
+    vs_status_e res = VS_CODE_ERR_FILE_READ;
     vs_status_e res_close = VS_CODE_OK;
     ssize_t file_sz;
+    bool need_read = true;
+
+    *out_sz = 0;
 
     VS_IOT_MEMSET(id, 0, sizeof(vs_storage_element_id_t));
     CHECK_RET(VS_IOT_STRLEN(slot_name) < sizeof(vs_storage_element_id_t),
@@ -94,13 +99,25 @@ vs_secmodule_slot_load(vs_iot_secmodule_slot_e slot, uint8_t *data, uint16_t buf
 
     // Get file size
     file_sz = _storage->impl_func.size(_storage->impl_data, id);
-    CHECK(file_sz > 0, "Slot is empty");
-    CHECK(file_sz <= buf_sz, "Cannot read file because of small buffer");
+    if (file_sz <= 0) {
+        VS_LOG_DEBUG("HSM Slot is empty");
+        res = VS_CODE_ERR_HSM_SLOT_EMPTY;
+        need_read = false;
+    }
+
+    if (file_sz > buf_sz) {
+        *out_sz = file_sz;
+        VS_LOG_DEBUG("Cannot read file because of small buffer");
+        res = VS_CODE_ERR_TOO_SMALL_BUFFER;
+        need_read = false;
+    }
 
     // Load data type to file
-    STATUS_CHECK(res = _storage->impl_func.load(_storage->impl_data, f, 0, data, file_sz), "Can't save data to file");
-
-    *out_sz = file_sz;
+    if (need_read) {
+        STATUS_CHECK(res = _storage->impl_func.load(_storage->impl_data, f, 0, data, file_sz),
+                     "Can't save data to file");
+        *out_sz = file_sz;
+    }
 
 terminate:
 

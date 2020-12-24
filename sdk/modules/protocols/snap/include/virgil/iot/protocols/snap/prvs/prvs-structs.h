@@ -85,8 +85,10 @@ typedef struct __attribute__((__packed__)) {
     uint8_t device_type[VS_DEVICE_TYPE_SIZE];            /**< device type */
     uint8_t serial[VS_DEVICE_SERIAL_SIZE];               /**< device serial number */
     vs_mac_addr_t mac;                                   /**< device MAC address */
-    uint16_t data_sz;                                    /**< \a data size */
-    uint8_t data[];                                      /**< data : #vs_pubkey_t own key + #vs_sign_t signature */
+
+    // TODO: use vs_provision_cert_t
+    uint16_t data_sz; /**< \a data size */
+    uint8_t data[];   /**< data : #vs_pubkey_t own key + #vs_sign_t signature */
 } vs_snap_prvs_devi_t;
 
 /** Signed data

@@ -56,6 +56,8 @@ static vs_secmodule_impl_t *_secmodule = NULL;
 
 static char *_base_url = NULL;
 
+static bool _ready = false;
+
 /******************************************************************************/
 static vs_status_e
 _get_pubkey_slot_num(vs_key_type_e key_type, uint8_t index, vs_iot_secmodule_slot_e *slot) {
@@ -246,15 +248,75 @@ vs_provision_verify_hl_key(const uint8_t *key_to_check, uint16_t key_size) {
 }
 
 /******************************************************************************/
+static bool
+_own_keypair_present(void) {
+    uint8_t pubkey[sizeof(vs_pubkey_dated_t) + PUBKEY_MAX_SZ];
+    uint16_t key_sz;
+    vs_secmodule_keypair_type_e ec_type;
+
+    CHECK_NOT_ZERO_RET(_secmodule, false);
+    CHECK_NOT_ZERO_RET(_secmodule->get_pubkey, false);
+
+    return VS_CODE_OK ==
+            _secmodule->get_pubkey(PRIVATE_KEY_SLOT,
+                                   pubkey,
+                                   sizeof(pubkey),
+                                   &key_sz,
+                                   &ec_type);
+}
+
+/******************************************************************************/
+static vs_status_e
+_generate_keypair(void) {
+    vs_status_e ret_code;
+
+    CHECK_NOT_ZERO_RET(_secmodule, VS_CODE_ERR_NOT_IMPLEMENTED);
+    CHECK_NOT_ZERO_RET(_secmodule->create_keypair, VS_CODE_ERR_NOT_IMPLEMENTED);
+
+    STATUS_CHECK_RET(_secmodule->create_keypair(PRIVATE_KEY_SLOT, VS_KEYPAIR_EC_SECP256R1), "");
+
+    return VS_CODE_OK;
+}
+
+/******************************************************************************/
 vs_status_e
 vs_provision_init(vs_storage_op_ctx_t *tl_storage_ctx,
                   vs_secmodule_impl_t *secmodule,
                   vs_provision_events_t events_cb) {
+    vs_status_e ret_code;
+    bool keypair_present;
+    bool tl_present = false;
+
+    _ready = false;
+
     CHECK_NOT_ZERO_RET(secmodule, VS_CODE_ERR_NULLPTR_ARGUMENT);
+    CHECK_NOT_ZERO_RET(secmodule->slot_load, VS_CODE_ERR_NULLPTR_ARGUMENT);
     _secmodule = secmodule;
 
-    // TrustList module
-    return vs_tl_init(tl_storage_ctx, secmodule, events_cb.tl_ver_info_cb);
+    // Check own KeyPair
+    keypair_present = _own_keypair_present();
+
+    // Check TrustList
+    if (keypair_present) {
+        tl_present =
+                VS_CODE_OK == vs_tl_init(tl_storage_ctx, secmodule, events_cb.tl_ver_info_cb);
+    }
+
+    // Provision is ready if required elements are present
+    if (keypair_present && tl_present) {
+        _ready = true;
+        VS_LOG_DEBUG("Provision is ready");
+        return VS_CODE_OK;
+    }
+
+    // Generate own KeyPair if absent
+    if (!keypair_present) {
+        STATUS_CHECK_RET(_generate_keypair(), "Cannot generate own keypair");
+    }
+
+    // Inform about absent provision
+    VS_LOG_DEBUG("Provision is absent");
+    return VS_CODE_ERR_PROVISION_NOT_READY;
 }
 
 /******************************************************************************/
@@ -262,6 +324,12 @@ vs_status_e
 vs_provision_deinit(void) {
     VS_IOT_FREE(_base_url);
     return vs_tl_deinit();
+}
+
+/******************************************************************************/
+bool
+vs_provision_is_ready(void) {
+    return _ready;
 }
 
 /******************************************************************************/
@@ -353,6 +421,58 @@ vs_provision_tl_find_next_key(vs_provision_tl_find_ctx_t *search_ctx,
     }
 
     return res;
+}
+
+/******************************************************************************/
+vs_status_e
+vs_provision_own_cert(vs_provision_cert_t *cert,
+                      uint16_t buffer_sz) {
+
+    uint16_t key_sz = 0;
+    vs_secmodule_keypair_type_e ec_type;
+    vs_pubkey_t *own_pubkey;
+    uint16_t sign_sz = 0;
+    vs_status_e ret_code;
+    uint16_t buffer_rest;
+
+    // Check input parameters
+    VS_IOT_ASSERT(cert);
+    VS_IOT_ASSERT(_secmodule);
+    VS_IOT_ASSERT(_secmodule->get_pubkey);
+    VS_IOT_ASSERT(_secmodule->slot_load);
+
+    // Fill own public key
+    own_pubkey = (vs_pubkey_t *)cert->raw_cert;
+    STATUS_CHECK_RET(
+            _secmodule->get_pubkey(PRIVATE_KEY_SLOT,
+                                   own_pubkey->meta_and_pubkey,
+                                   buffer_sz,
+                                   &key_sz,
+                                   &ec_type),
+            "Unable to load public key");
+    own_pubkey->key_type = VS_KEY_IOT_DEVICE;
+    own_pubkey->ec_type = ec_type;
+    own_pubkey->meta_data_sz = 0;
+    cert->key_sz = sizeof(vs_pubkey_t) + own_pubkey->meta_data_sz + key_sz;
+
+    // Calculate left space for signature
+    buffer_rest = buffer_sz - cert->key_sz;
+    CHECK_NOT_ZERO_RET(buffer_rest >= sizeof(vs_sign_t), VS_CODE_ERR_TOO_SMALL_BUFFER);
+    buffer_rest -= sizeof(vs_pubkey_t);
+
+    // Load signature
+    if (vs_provision_is_ready()) {
+        STATUS_CHECK_RET(_secmodule->slot_load(SIGNATURE_SLOT,
+                                               &cert->raw_cert[cert->key_sz],
+                                               buffer_rest,
+                                               &sign_sz),
+                         "Unable to load own signature");
+        cert->signature_sz = sign_sz;
+    } else {
+        cert->signature_sz = 0;
+    }
+
+    return VS_CODE_OK;
 }
 
 /******************************************************************************/

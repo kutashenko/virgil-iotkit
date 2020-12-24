@@ -119,6 +119,9 @@ extern "C" {
 vs_status_e
 vs_provision_init(vs_storage_op_ctx_t *tl_storage_ctx, vs_secmodule_impl_t *secmodule, vs_provision_events_t events_cb);
 
+bool
+vs_provision_is_ready(void);
+
 /** Provision destruction
  *
  * This function must be called after all other Provision calls.
@@ -223,6 +226,10 @@ vs_provision_tl_find_next_key(vs_provision_tl_find_ctx_t *search_ctx,
                               uint16_t *pubkey_sz,
                               uint8_t **meta,
                               uint16_t *meta_sz);
+
+vs_status_e
+vs_provision_own_cert(vs_provision_cert_t *cert,
+                      uint16_t buffer_sz);
 
 #ifdef __cplusplus
 } // extern "C"

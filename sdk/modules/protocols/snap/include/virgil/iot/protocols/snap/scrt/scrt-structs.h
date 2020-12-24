@@ -45,11 +45,80 @@ extern "C" {
 
 #define SCRT_SESSION_KEY_SZ (32)
 #define SCRT_USER_NAME_SZ_MAX (64)
-typedef enum {
-    VS_USER_UNKNOWN,
-    VS_USER_OWNER,
-    VS_USER_GUEST
-} vs_user_type_t;
+typedef enum { VS_USER_UNKNOWN, VS_USER_OWNER, VS_USER_GUEST } vs_user_type_t;
+
+#define SCRT_NONCE_SZ (32)
+
+
+// --------------------------------------------------------
+//      SCRT::INFO - Get crypto information
+// --------------------------------------------------------
+// INFO: Could be sent in a plain text
+typedef struct __attribute__((__packed__)) {
+    uint8_t provisioned;          /**< Current version of protocol */
+    vs_provision_cert_t own_cert; /**< Peer key and its signature */
+} vs_scrt_info_response_t;
+
+// --------------------------------------------------------
+//      SCRT::GSEK - Get SEssion Key
+// --------------------------------------------------------
+// INFO: Must be encrypted asymmetrically
+typedef struct __attribute__((__packed__)) {
+    uint8_t nonce[SCRT_NONCE_SZ];   /**< nonce to protect against reply attacks */
+    uint8_t raw_sign_datedpubkey[]; /**< Array that contains vs_sign_t and vs_pubkey_dated_t. Because of variable sizes.
+                                     */
+} vs_scrt_gsek_request_t;
+
+// INFO: Must be encrypted asymmetrically
+typedef struct __attribute__((__packed__)) {
+    uint8_t requested_nonce[SCRT_NONCE_SZ];   /**< a copy of nonce from request */
+    uint8_t session_key[SCRT_SESSION_KEY_SZ]; /**< Session key. The simplest solution for ver.1 */
+} vs_scrt_gsek_response_t;
+
+// --------------------------------------------------------
+//      SCRT::AUSR - Add a new User
+// --------------------------------------------------------
+// INFO: Must be encrypted asymmetrically
+typedef struct __attribute__((__packed__)) {
+    uint8_t user_type;                            /**< #vs_user_type_t */
+    uint8_t new_user_name[SCRT_USER_NAME_SZ_MAX]; /**< New User name */
+    uint16_t new_user_crypto_info;                /**< Size of vs_provision_cert_t for new user */
+    uint16_t current_owner_crypto_info;           /**< Size of vs_provision_cert_t for current owner */
+    uint8_t certs[];                              /**< vs_provision_cert_t of a New and a current owners */
+} vs_scrt_ausr_request_t;
+
+// --------------------------------------------------------
+//      SCRT::RUSR - Remove user
+// --------------------------------------------------------
+// INFO: Must be encrypted asymmetrically
+typedef struct __attribute__((__packed__)) {
+    uint8_t user_type;                           /**< #vs_user_type_t */
+    uint8_t rm_user_name[SCRT_USER_NAME_SZ_MAX]; /**< Name of User to be removed */
+    vs_provision_cert_t current_owner_cert;      /**< Crypto info about a current owner */
+} vs_scrt_rusr_request_t;
+
+// --------------------------------------------------------
+//      SCRT::GUSR - Get users
+// --------------------------------------------------------
+typedef struct __attribute__((__packed__)) {
+    uint8_t user_name[SCRT_USER_NAME_SZ_MAX]; /**< New name */
+    vs_pubkey_t user_pub_key;                 /**< Public key of user */
+} vs_scrt_gusr_tiny_t;
+
+// INFO: Could be sent in a plain text
+typedef struct __attribute__((__packed__)) {
+    uint8_t user_type;          /**< #vs_user_type_t */
+    uint8_t max_users_per_resp; /**< Maximum users in response */
+    uint8_t users_offset;       /**< First user num to get */
+} vs_scrt_gusr_request_t;
+
+// INFO: Could be sent in a plain text
+typedef struct __attribute__((__packed__)) {
+    uint8_t user_type;           /**< #vs_user_type_t */
+    uint8_t users_in_resp;       /**< Amount of users in response */
+    uint8_t users_offset;        /**< First user num */
+    vs_scrt_gusr_tiny_t users[]; /**< Array of #vs_scrt_gusr_tiny_t. Amount is #users_in_resp */
+} vs_scrt_gusr_response_t;
 
 #ifdef __cplusplus
 } // extern "C"

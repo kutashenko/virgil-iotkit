@@ -48,19 +48,17 @@
 #include <string.h>
 
 static vs_snap_service_t _scrt_client = {0};
- static vs_snap_scrt_client_service_t _scrt_impl = {};
+static vs_snap_scrt_client_service_t _scrt_impl = {};
 
 /******************************************************************************/
 vs_status_e
-vs_snap_scrt_get_info(const vs_netif_t *netif,
-                      const vs_mac_addr_t *mac) {
+vs_snap_scrt_get_info(const vs_netif_t *netif, const vs_mac_addr_t *mac) {
     return VS_CODE_ERR_NOT_IMPLEMENTED;
 }
 
 /******************************************************************************/
 vs_status_e
-vs_snap_scrt_request_session_key(const vs_netif_t *netif,
-                                 const vs_mac_addr_t *mac) {
+vs_snap_scrt_request_session_key(const vs_netif_t *netif, const vs_mac_addr_t *mac) {
     return VS_CODE_ERR_NOT_IMPLEMENTED;
 }
 

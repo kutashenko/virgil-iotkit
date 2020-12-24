@@ -46,7 +46,7 @@ namespace VirgilIoTKit {
 extern "C" {
 #endif
 
-//typedef vs_status_e (*vs_snap_scrt_server_get_users_cb_t)(vs_snap_transaction_id_t id, vs_status_e res);
+// typedef vs_status_e (*vs_snap_scrt_server_get_users_cb_t)(vs_snap_transaction_id_t id, vs_status_e res);
 
 /** SCRT client implementation */
 typedef struct {

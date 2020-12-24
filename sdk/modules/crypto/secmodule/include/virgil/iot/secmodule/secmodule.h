@@ -476,7 +476,7 @@ typedef struct {
 
     // Key-pair in slot
     vs_secmodule_keypair_create_t create_keypair; /**< Key pair generation */
-    vs_secmodule_keypair_set_t set_keypair; /**< Save Key pair to slot */
+    vs_secmodule_keypair_set_t set_keypair;       /**< Save Key pair to slot */
     vs_secmodule_keypair_get_pubkey_t get_pubkey; /**< Get public key */
 
     // ECDSA

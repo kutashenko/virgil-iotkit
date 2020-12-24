@@ -416,8 +416,6 @@ vs_snap_packet_dump(const char *title, const vs_snap_packet_t *packet) {
 vs_status_e
 vs_snap_deinit() {
     int i;
-    CHECK_NOT_ZERO_RET(_default_netif(), VS_CODE_ERR_NULLPTR_ARGUMENT);
-    CHECK_NOT_ZERO_RET(_default_netif()->deinit, VS_CODE_ERR_NULLPTR_ARGUMENT);
 
     // Stop network
     for (i = 0; i < _netifs_cnt; i++) {
@@ -501,7 +499,7 @@ vs_snap_send(const vs_netif_t *netif, const uint8_t *data, uint16_t data_sz) {
     }
 
     // Send message to certain network interface
-    return netif->tx(_default_netif(), data, data_sz);
+    return netif->tx((vs_netif_t *)netif, data, data_sz);
 }
 
 /******************************************************************************/

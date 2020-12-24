@@ -65,12 +65,10 @@ const vs_snap_service_t *
 vs_snap_scrt_client(vs_snap_scrt_client_service_t impl);
 
 vs_status_e
-vs_snap_scrt_get_info(const vs_netif_t *netif,
-                      const vs_mac_addr_t *mac);
+vs_snap_scrt_get_info(const vs_netif_t *netif, const vs_mac_addr_t *mac);
 
 vs_status_e
-vs_snap_scrt_request_session_key(const vs_netif_t *netif,
-                                 const vs_mac_addr_t *mac);
+vs_snap_scrt_request_session_key(const vs_netif_t *netif, const vs_mac_addr_t *mac);
 
 vs_status_e
 vs_snap_scrt_add_user(const vs_netif_t *netif,
@@ -86,10 +84,10 @@ vs_snap_scrt_remove_user(const vs_netif_t *netif,
 
 vs_status_e
 vs_snap_scrt_get_users(const vs_netif_t *netif,
-                         const vs_mac_addr_t *mac,
-                         vs_user_type_t user_type,
-                         uint8_t offset,
-                         uint8_t max_amount);
+                       const vs_mac_addr_t *mac,
+                       vs_user_type_t user_type,
+                       uint8_t offset,
+                       uint8_t max_amount);
 
 #ifdef __cplusplus
 } // extern "C"

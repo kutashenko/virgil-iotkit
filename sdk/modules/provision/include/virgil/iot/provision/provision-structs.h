@@ -239,6 +239,13 @@ typedef struct {
     uint8_t element_buf[VS_TL_STORAGE_MAX_PART_SIZE];
 } vs_provision_tl_find_ctx_t;
 
+typedef struct __attribute__((__packed__)) {
+    uint16_t signature_sz;          /**< Size of vs_sign_t  */
+    uint16_t key_sz;                /**< Size of vs_pubkey_dated_t */
+    uint8_t raw_cert[];             /**< Array that contains vs_pubkey_dated_t and vs_sign_t. Because of variable sizes.
+                                     */
+} vs_provision_cert_t;
+
 /** Callback function to inform system about current version of file
  *
  * \param[in] ver #vs_file_version_t Current version of file
