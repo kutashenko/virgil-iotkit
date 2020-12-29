@@ -85,7 +85,7 @@ signals:
 
 public slots:
     void
-    onConfigureDevices();
+    onConfigureDevice();
 
     Q_INVOKABLE void
     onSetConfigData(QString ssid, QString pass);
