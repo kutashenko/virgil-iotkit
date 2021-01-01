@@ -110,6 +110,43 @@ _cache_cells_info(vs_user_type_t type) {
 
 /******************************************************************************/
 static vs_status_e
+_get_by_raw_pos(vs_user_type_t type, uint16_t pos,
+                char *name, uint16_t name_buf_sz,
+                vs_pubkey_dated_t *pubkey, uint16_t key_buf_sz, uint16_t *key_sz) {
+    vs_status_e ret_code;
+    vs_storage_element_id_t id;
+    size_t data_sz;
+    uint8_t data_buf[USER_BUF_SZ_MAX];
+    vs_pubkey_dated_t *loaded_pubkey;
+
+    // Check parameters
+    CHECK_NOT_ZERO_RET(type < VS_USER_TYPE_MAX, VS_CODE_ERR_ZERO_ARGUMENT);
+    CHECK_NOT_ZERO_RET(pos < USER_COUNT_MAX, VS_CODE_ERR_USERS_LIMIT);
+    CHECK_NOT_ZERO_RET(name_buf_sz >= USER_NAME_SZ_MAX, VS_CODE_ERR_TOO_SMALL_BUFFER);
+
+    // Check if user cell active
+    STATUS_CHECK_RET(_cache_cells_info(type), "Cannot cache users info");
+    CHECK_RET(_users_cells[type][pos], VS_CODE_ERR_USER_NOT_FOUND, "User not found");
+
+    // Load user info
+    STATUS_CHECK_RET(_create_file_name(type, pos, &id), "Cannot create file name for user file");
+    STATUS_CHECK_RET(vs_secbox_load(id,
+                                    data_buf,
+                                    USER_BUF_SZ_MAX,
+                                    &data_sz),
+                     "Cannot load user data");
+    loaded_pubkey = (vs_pubkey_dated_t*)&data_buf[USER_NAME_SZ_MAX];
+    STATUS_CHECK_RET(vs_provision_key_size(loaded_pubkey, key_sz), "Cannot get key size");
+    CHECK_RET(key_buf_sz >= *key_sz, VS_CODE_ERR_TOO_SMALL_BUFFER, "Key buffer too small");
+
+    VS_IOT_MEMCPY(name, data_buf, USER_NAME_SZ_MAX);
+    VS_IOT_MEMCPY(pubkey, loaded_pubkey, *key_sz);
+
+    return VS_CODE_OK;
+}
+
+/******************************************************************************/
+static vs_status_e
 _find_by_name(vs_user_type_t type, const char *name, uint16_t *pos) {
     vs_status_e ret_code;
     int i;
@@ -129,9 +166,9 @@ _find_by_name(vs_user_type_t type, const char *name, uint16_t *pos) {
 
     for (i = 0; i < USER_COUNT_MAX; i++) {
         if (_users_cells[type][i]) {
-            if (VS_CODE_OK != vs_users_get_by_num(type, i,
-                                                  (char *)read_name, USER_NAME_SZ_MAX,
-                                                  read_pubkey, USER_KEY_BUF_SZ_MAX, &key_sz)) {
+            if (VS_CODE_OK != _get_by_raw_pos(type, i,
+                                              (char *)read_name, USER_NAME_SZ_MAX,
+                                              read_pubkey, USER_KEY_BUF_SZ_MAX, &key_sz)) {
                 VS_LOG_ERROR("Cannot read user data");
                 continue;
             }
@@ -167,9 +204,9 @@ _find_by_key(vs_user_type_t type, const vs_pubkey_dated_t *pubkey, uint16_t *pos
 
     for (i = 0; i < USER_COUNT_MAX; i++) {
         if (_users_cells[type][i]) {
-            if (VS_CODE_OK != vs_users_get_by_num(type, i,
-                                                  (char*)read_name, USER_NAME_SZ_MAX,
-                                                  read_pubkey, USER_KEY_BUF_SZ_MAX, &key_sz)) {
+            if (VS_CODE_OK != _get_by_raw_pos(type, i,
+                                              (char*)read_name, USER_NAME_SZ_MAX,
+                                              read_pubkey, USER_KEY_BUF_SZ_MAX, &key_sz)) {
                 VS_LOG_ERROR("Cannot read user data");
                 continue;
             }
@@ -183,6 +220,33 @@ _find_by_key(vs_user_type_t type, const vs_pubkey_dated_t *pubkey, uint16_t *pos
         }
     }
 
+    return VS_CODE_ERR_USER_NOT_FOUND;
+}
+
+/******************************************************************************/
+static vs_status_e
+_find_raw_pos(vs_user_type_t type, uint16_t pos, uint16_t *raw_pos) {
+    vs_status_e ret_code;
+    int i, cnt;
+
+    // Check input parameters
+    CHECK_NOT_ZERO_RET(type < VS_USER_TYPE_MAX, VS_CODE_ERR_ZERO_ARGUMENT);
+    CHECK_NOT_ZERO_RET(raw_pos, VS_CODE_ERR_ZERO_ARGUMENT);
+    CHECK_NOT_ZERO_RET(pos < USER_COUNT_MAX, VS_CODE_ERR_INCORRECT_ARGUMENT);
+
+    // Prepare info about used cells
+    STATUS_CHECK_RET(_cache_cells_info(type), "Cannot cache users info");
+
+    // Look for requred cell
+    for (i = 0, cnt = 0; i < USER_COUNT_MAX; i++) {
+        if (_users_cells[type][i]) {
+            if (cnt == pos) {
+                *raw_pos = i;
+                return VS_CODE_OK;
+            }
+            ++cnt;
+        }
+    }
     return VS_CODE_ERR_USER_NOT_FOUND;
 }
 
@@ -304,8 +368,8 @@ vs_users_remove_by_key(vs_user_type_t type, const vs_pubkey_dated_t *pubkey) {
 }
 
 /******************************************************************************/
-vs_status_e
-vs_users_remove_by_num(vs_user_type_t type, uint16_t pos) {
+static vs_status_e
+_remove_by_raw_pos(vs_user_type_t type, uint16_t pos) {
     vs_status_e ret_code;
     vs_storage_element_id_t id;
 
@@ -316,6 +380,18 @@ vs_users_remove_by_num(vs_user_type_t type, uint16_t pos) {
     _users_cells[type][pos] = 0;
 
     STATUS_CHECK_RET(_save_cells_info(type), "Cannot save users info");
+
+    return VS_CODE_OK;
+}
+
+/******************************************************************************/
+vs_status_e
+vs_users_remove_by_num(vs_user_type_t type, uint16_t pos) {
+    vs_status_e ret_code;
+    uint16_t raw_pos;
+
+    STATUS_CHECK_RET(_find_raw_pos(type, pos, &raw_pos), "Cannot find raw position of user");
+    STATUS_CHECK_RET(_remove_by_raw_pos(type, raw_pos), "Cannot remove user by raw position");
 
     return VS_CODE_OK;
 }
@@ -347,33 +423,14 @@ vs_users_get_by_num(vs_user_type_t type, uint16_t pos,
                     char *name, uint16_t name_buf_sz,
                     vs_pubkey_dated_t *pubkey, uint16_t key_buf_sz, uint16_t *key_sz) {
     vs_status_e ret_code;
-    vs_storage_element_id_t id;
-    size_t data_sz;
-    uint8_t data_buf[USER_BUF_SZ_MAX];
-    vs_pubkey_dated_t *loaded_pubkey;
+    uint16_t raw_pos;
 
-    // Check parameters
-    CHECK_NOT_ZERO_RET(type < VS_USER_TYPE_MAX, VS_CODE_ERR_ZERO_ARGUMENT);
-    CHECK_NOT_ZERO_RET(pos < USER_COUNT_MAX, VS_CODE_ERR_USERS_LIMIT);
-    CHECK_NOT_ZERO_RET(name_buf_sz >= USER_NAME_SZ_MAX, VS_CODE_ERR_TOO_SMALL_BUFFER);
-
-    // Check if user cell active
-    STATUS_CHECK_RET(_cache_cells_info(type), "Cannot cache users info");
-    CHECK_RET(_users_cells[type][pos], VS_CODE_ERR_USER_NOT_FOUND, "User not found");
-
-    // Load user info
-    STATUS_CHECK_RET(_create_file_name(type, pos, &id), "Cannot create file name for user file");
-    STATUS_CHECK_RET(vs_secbox_load(id,
-                                    data_buf,
-                                    USER_BUF_SZ_MAX,
-                                    &data_sz),
-                     "Cannot load user data");
-    loaded_pubkey = (vs_pubkey_dated_t*)&data_buf[USER_NAME_SZ_MAX];
-    STATUS_CHECK_RET(vs_provision_key_size(loaded_pubkey, key_sz), "Cannot get key size");
-    CHECK_RET(key_buf_sz >= *key_sz, VS_CODE_ERR_TOO_SMALL_BUFFER, "Key buffer too small");
-
-    VS_IOT_MEMCPY(name, data_buf, USER_NAME_SZ_MAX);
-    VS_IOT_MEMCPY(pubkey, loaded_pubkey, *key_sz);
+    STATUS_CHECK_RET(_find_raw_pos(type, pos, &raw_pos), "Cannot find raw position of user");
+    STATUS_CHECK_RET(_get_by_raw_pos(type,
+                                     raw_pos,
+                                     name, name_buf_sz,
+                                     pubkey, key_buf_sz, key_sz),
+                     "Cannot get user info by raw position");
 
     return VS_CODE_OK;
 }
@@ -392,9 +449,9 @@ vs_users_get_key(vs_user_type_t type, const char *name,
     STATUS_CHECK_RET(_find_by_name(type, name, &pos), "Cannot find user");
 
     // TODO: improve speed by one read instead of two
-    return vs_users_get_by_num(type, pos,
-                               (char *)read_name, USER_NAME_SZ_MAX,
-                               pubkey, buf_sz, key_sz);
+    return _get_by_raw_pos(type, pos,
+                           (char *)read_name, USER_NAME_SZ_MAX,
+                           pubkey, buf_sz, key_sz);
 }
 
 /******************************************************************************/
@@ -412,9 +469,9 @@ vs_users_get_name(vs_user_type_t type, const vs_pubkey_dated_t *pubkey,
     STATUS_CHECK_RET(_find_by_key(type, pubkey, &pos), "Cannot find user");
 
     // TODO: improve speed by one read instead of two
-    return vs_users_get_by_num(type, pos,
-                               name, buf_sz,
-                               (vs_pubkey_dated_t *)read_key, USER_KEY_BUF_SZ_MAX, &key_sz);
+    return _get_by_raw_pos(type, pos,
+                           name, buf_sz,
+                           (vs_pubkey_dated_t *)read_key, USER_KEY_BUF_SZ_MAX, &key_sz);
 }
 
 /******************************************************************************/

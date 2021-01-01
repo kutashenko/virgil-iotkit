@@ -46,6 +46,7 @@
 #include <virgil/iot/status_code/status_code.h>
 #include <virgil/iot/logger/logger.h>
 #include <virgil/iot/macros/macros.h>
+#include <virgil/iot/users/users.h>
 #include <stdlib-config.h>
 #include <endian-config.h>
 
@@ -168,6 +169,8 @@ _fill_stat_data(vs_info_stat_response_t *stat_data) {
 static vs_status_e
 _fill_ginf_data(vs_info_ginf_response_t *general_info) {
     const vs_netif_t *defautl_netif;
+    uint16_t owners_amount;
+    vs_status_e ret_code;
 
     CHECK_NOT_ZERO_RET(general_info, VS_CODE_ERR_INCORRECT_ARGUMENT);
 
@@ -189,7 +192,8 @@ _fill_ginf_data(vs_info_ginf_response_t *general_info) {
 
     // TODO: Fill it
     general_info->protocol_version = 1;
-    general_info->has_owner = 0;
+    STATUS_CHECK_RET(vs_users_get_amount(VS_USER_OWNER, &owners_amount), "Cannot get owners amount");
+    general_info->has_owner = owners_amount > 0;
     general_info->need_connection_creds = 1;
 
     // Normalize byte order

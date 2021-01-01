@@ -136,6 +136,7 @@ typedef enum {
 
     VS_CODE_ERR_USERS_LIMIT = -120,        /**< Users limit is reached */
     VS_CODE_ERR_USER_NOT_FOUND = -121,     /**< Users limit is reached */
+    VS_CODE_ERR_USER_PRESENT = -122,       /**< Users already present */
 
     VS_CODE_ERR_USER = -128 /**< User specific error codes start with this value */
 

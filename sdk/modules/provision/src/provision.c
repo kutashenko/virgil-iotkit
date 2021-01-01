@@ -489,3 +489,22 @@ vs_provision_key_size(const vs_pubkey_dated_t *pubkey, uint16_t *key_sz) {
 }
 
 /******************************************************************************/
+vs_status_e
+vs_provision_cert_size(const vs_provision_cert_t *cert, uint16_t *cert_sz) {
+    CHECK_NOT_ZERO_RET(cert, VS_CODE_ERR_ZERO_ARGUMENT);
+    CHECK_NOT_ZERO_RET(cert_sz, VS_CODE_ERR_ZERO_ARGUMENT);
+
+    *cert_sz = sizeof(vs_provision_cert_t)
+              + cert->key_sz
+              + cert->signature_sz;
+
+    return VS_CODE_OK;
+}
+
+/******************************************************************************/
+vs_status_e
+vs_provision_verify_cert(const vs_provision_cert_t *cert) {
+    return VS_CODE_ERR_NOT_IMPLEMENTED;
+}
+
+/******************************************************************************/
