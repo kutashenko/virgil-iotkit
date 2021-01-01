@@ -69,6 +69,11 @@ if (VIRGIL_IOT_SECBOX)
 endif()
 
 #
+#   Users management
+#
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/users)
+
+#
 #   Cloud
 #
 if (VIRGIL_IOT_CLOUD)

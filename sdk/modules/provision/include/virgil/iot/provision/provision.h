@@ -180,6 +180,9 @@ vs_provision_verify_hl_key(const uint8_t *key_to_check, uint16_t key_size);
 const char *
 vs_provision_cloud_url(void);
 
+vs_status_e
+vs_provision_key_size(const vs_pubkey_dated_t *pubkey, uint16_t *key_sz);
+
 /** Find first key
  *
  * This function finds the first \a key_type key and returns it with meta information if present.

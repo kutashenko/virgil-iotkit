@@ -34,12 +34,6 @@
 
 #include <iostream>
 
-extern "C" bool
-vs_logger_output_hal(const char *buffer) {
-    std::cout << buffer << std::flush;
-
-    return true;
-}
 
 extern "C" void
 vs_impl_msleep(size_t msec) {

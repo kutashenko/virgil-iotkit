@@ -132,7 +132,10 @@ typedef enum {
 
     VS_CODE_ERR_PROVISION_NOT_READY = -100,/**< Device doesn't have a provision */
 
-    VS_CODE_ERR_HSM_SLOT_EMPTY = -110, /**< HSM Slot is empty */
+    VS_CODE_ERR_HSM_SLOT_EMPTY = -110,     /**< HSM Slot is empty */
+
+    VS_CODE_ERR_USERS_LIMIT = -120,        /**< Users limit is reached */
+    VS_CODE_ERR_USER_NOT_FOUND = -121,     /**< Users limit is reached */
 
     VS_CODE_ERR_USER = -128 /**< User specific error codes start with this value */
 

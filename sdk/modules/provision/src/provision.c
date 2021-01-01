@@ -476,3 +476,16 @@ vs_provision_own_cert(vs_provision_cert_t *cert,
 }
 
 /******************************************************************************/
+vs_status_e
+vs_provision_key_size(const vs_pubkey_dated_t *pubkey, uint16_t *key_sz) {
+    CHECK_NOT_ZERO_RET(pubkey, VS_CODE_ERR_ZERO_ARGUMENT);
+    CHECK_NOT_ZERO_RET(key_sz, VS_CODE_ERR_ZERO_ARGUMENT);
+
+    *key_sz = sizeof(vs_pubkey_dated_t)
+              + vs_secmodule_get_pubkey_len(pubkey->pubkey.ec_type)
+              + pubkey->pubkey.meta_data_sz;
+
+    return VS_CODE_OK;
+}
+
+/******************************************************************************/
