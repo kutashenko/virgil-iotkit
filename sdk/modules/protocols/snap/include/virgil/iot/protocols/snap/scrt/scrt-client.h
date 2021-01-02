@@ -45,6 +45,8 @@ namespace VirgilIoTKit {
 extern "C" {
 #endif
 
+#define VS_SCRT_CLIENT_REQUEST_MAX_SZ (768)
+
 
 typedef vs_status_e (*vs_snap_scrt_client_info_cb_t)(vs_snap_transaction_id_t id,
                                                      vs_status_e res,
@@ -64,7 +66,7 @@ typedef struct {
 } vs_snap_scrt_client_service_t;
 
 const vs_snap_service_t *
-vs_snap_scrt_client(vs_snap_scrt_client_service_t impl);
+vs_snap_scrt_client(vs_secmodule_impl_t *secmodule, vs_snap_scrt_client_service_t impl);
 
 vs_status_e
 vs_snap_scrt_get_info(const vs_netif_t *netif, const vs_mac_addr_t *mac);
@@ -76,7 +78,8 @@ vs_status_e
 vs_snap_scrt_add_user(const vs_netif_t *netif,
                       const vs_mac_addr_t *mac,
                       vs_user_type_t user_type,
-                      const char *user_name);
+                      const char *user_name,
+                      const vs_cert_t *user_cert);
 
 vs_status_e
 vs_snap_scrt_remove_user(const vs_netif_t *netif,

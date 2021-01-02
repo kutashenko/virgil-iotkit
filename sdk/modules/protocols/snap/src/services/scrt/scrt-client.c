@@ -42,11 +42,13 @@
 #include <virgil/iot/macros/macros.h>
 #include <virgil/iot/protocols/snap.h>
 #include <virgil/iot/logger/logger.h>
+#include <virgil/iot/high-level/high-level-crypto.h>
 #include <stdlib-config.h>
 #include <global-hal.h>
 #include <stdbool.h>
 #include <string.h>
 
+static vs_secmodule_impl_t *_secmodule = NULL;
 static vs_snap_service_t _scrt_client = {0};
 static vs_snap_scrt_client_service_t _scrt_impl = {};
 
@@ -66,7 +68,37 @@ vs_snap_scrt_get_info(const vs_netif_t *netif, const vs_mac_addr_t *mac) {
 /******************************************************************************/
 vs_status_e
 vs_snap_scrt_request_session_key(const vs_netif_t *netif, const vs_mac_addr_t *mac) {
-    return VS_CODE_ERR_NOT_IMPLEMENTED;
+    vs_status_e ret_code;
+    uint8_t request_buf[VS_SCRT_CLIENT_REQUEST_MAX_SZ];
+    vs_scrt_gsek_request_t *get_session_key_request = (vs_scrt_gsek_request_t *)request_buf;
+
+    // Clean buffer
+    VS_IOT_MEMSET(request_buf, 0, VS_SCRT_CLIENT_REQUEST_MAX_SZ);
+
+    // Fill NONCE
+    STATUS_CHECK_RET(_secmodule->random(get_session_key_request->nonce, SCRT_NONCE_SZ), "Cannot fill NONCE");
+
+    // Fill own certificate
+    vs_cert_t *own_cert = (vs_cert_t *)get_session_key_request->user_cert_and_sign;
+    uint16_t buf_sz = VS_SCRT_CLIENT_REQUEST_MAX_SZ - sizeof(vs_scrt_gsek_request_t);
+    STATUS_CHECK_RET(vs_provision_own_cert(own_cert, buf_sz), "Cannot get own certificate");
+    uint16_t own_cert_sz;
+    STATUS_CHECK_RET(vs_crypto_hl_cert_size(own_cert, &own_cert_sz), "Cannot get own cert size");
+
+    // Fill signature
+    vs_sign_t *sign = (vs_sign_t *)&get_session_key_request->user_cert_and_sign[own_cert_sz];
+    uint16_t sign_sz;
+    uint8_t *sign_data = request_buf;
+    size_t sign_data_sz = sizeof(vs_scrt_gsek_request_t) + own_cert_sz;
+    STATUS_CHECK_RET(vs_crypto_hl_sign(_secmodule, sign_data, sign_data_sz, sign, buf_sz, &sign_sz),
+                     "Cannot sign request");
+
+    // Send request
+    uint16_t request_sz = sign_data_sz + sign_sz;
+    STATUS_CHECK_RET(vs_snap_send_request(netif, mac, VS_SCRT_SERVICE_ID, VS_SCRT_GSEK, request_buf, request_sz),
+                     "Cannot send request");
+
+    return VS_CODE_OK;
 }
 
 /******************************************************************************/
@@ -74,8 +106,51 @@ vs_status_e
 vs_snap_scrt_add_user(const vs_netif_t *netif,
                       const vs_mac_addr_t *mac,
                       vs_user_type_t user_type,
-                      const char *user_name) {
-    return VS_CODE_ERR_NOT_IMPLEMENTED;
+                      const char *user_name,
+                      const vs_cert_t *user_cert) {
+    vs_status_e ret_code;
+    size_t new_user_name_sz;
+    uint8_t request_buf[VS_SCRT_CLIENT_REQUEST_MAX_SZ];
+    vs_scrt_ausr_request_t *add_user_request = (vs_scrt_ausr_request_t *)request_buf;
+
+    // Check input parameters
+    CHECK_NOT_ZERO_RET(user_cert, VS_CODE_ERR_INCORRECT_ARGUMENT);
+    CHECK_NOT_ZERO_RET(user_name && user_name[0], VS_CODE_ERR_INCORRECT_ARGUMENT);
+    new_user_name_sz = strnlen(user_name, USER_NAME_SZ_MAX);
+    CHECK_NOT_ZERO_RET(new_user_name_sz < USER_NAME_SZ_MAX, VS_CODE_ERR_INCORRECT_ARGUMENT);
+
+    // Fill request
+    VS_IOT_MEMSET(request_buf, 0, VS_SCRT_CLIENT_REQUEST_MAX_SZ);      // Clean
+    add_user_request->user_type = user_type;                           // User type
+    VS_IOT_STRCPY((char *)add_user_request->new_user_name, user_name); // Fill user name
+                                                                       // Fill user certificate
+    uint16_t user_cert_sz;
+    STATUS_CHECK_RET(vs_crypto_hl_cert_size(user_cert, &user_cert_sz), "Cannot get cert size");
+    VS_IOT_MEMCPY(add_user_request->certs_and_sign, user_cert, user_cert_sz);
+    add_user_request->new_user_cert_sz = user_cert_sz;
+
+    // Fill own certificate
+    vs_cert_t *own_cert = (vs_cert_t *)&add_user_request->certs_and_sign[user_cert_sz];
+    uint16_t buf_sz = VS_SCRT_CLIENT_REQUEST_MAX_SZ - sizeof(vs_scrt_ausr_request_t) - user_cert_sz;
+    STATUS_CHECK_RET(vs_provision_own_cert(own_cert, buf_sz), "Cannot get own certificate");
+    uint16_t own_cert_sz;
+    STATUS_CHECK_RET(vs_crypto_hl_cert_size(own_cert, &own_cert_sz), "Cannot get own cert size");
+    add_user_request->current_owner_cert_sz = own_cert_sz;
+
+    // Fill signature
+    vs_sign_t *sign = (vs_sign_t *)&add_user_request->certs_and_sign[user_cert_sz + own_cert_sz];
+    uint16_t sign_sz;
+    uint8_t *sign_data = request_buf;
+    size_t sign_data_sz = sizeof(vs_scrt_ausr_request_t) + user_cert_sz + own_cert_sz;
+    STATUS_CHECK_RET(vs_crypto_hl_sign(_secmodule, sign_data, sign_data_sz, sign, buf_sz, &sign_sz),
+                     "Cannot sign request");
+
+    // Send request
+    uint16_t request_sz = sign_data_sz + sign_sz;
+    STATUS_CHECK_RET(vs_snap_send_request(netif, mac, VS_SCRT_SERVICE_ID, VS_SCRT_AUSR, request_buf, request_sz),
+                     "Cannot send request");
+
+    return VS_CODE_OK;
 }
 
 /******************************************************************************/
@@ -84,7 +159,42 @@ vs_snap_scrt_remove_user(const vs_netif_t *netif,
                          const vs_mac_addr_t *mac,
                          vs_user_type_t user_type,
                          const char *user_name) {
-    return VS_CODE_ERR_NOT_IMPLEMENTED;
+    vs_status_e ret_code;
+    size_t user_name_sz;
+    uint8_t request_buf[VS_SCRT_CLIENT_REQUEST_MAX_SZ];
+    vs_scrt_rusr_request_t *rm_user_request = (vs_scrt_rusr_request_t *)request_buf;
+
+    // Check input parameters
+    CHECK_NOT_ZERO_RET(user_name && user_name[0], VS_CODE_ERR_INCORRECT_ARGUMENT);
+    user_name_sz = strnlen(user_name, USER_NAME_SZ_MAX);
+    CHECK_NOT_ZERO_RET(user_name_sz < USER_NAME_SZ_MAX, VS_CODE_ERR_INCORRECT_ARGUMENT);
+
+    // Fill request
+    VS_IOT_MEMSET(request_buf, 0, VS_SCRT_CLIENT_REQUEST_MAX_SZ);    // Clean
+    rm_user_request->user_type = user_type;                          // User type
+    VS_IOT_STRCPY((char *)rm_user_request->rm_user_name, user_name); // Fill user name
+
+    // Fill own certificate
+    vs_cert_t *own_cert = (vs_cert_t *)rm_user_request->current_owner_cert_and_sign;
+    uint16_t buf_sz = VS_SCRT_CLIENT_REQUEST_MAX_SZ - sizeof(vs_scrt_rusr_request_t);
+    STATUS_CHECK_RET(vs_provision_own_cert(own_cert, buf_sz), "Cannot get own certificate");
+    uint16_t own_cert_sz;
+    STATUS_CHECK_RET(vs_crypto_hl_cert_size(own_cert, &own_cert_sz), "Cannot get own cert size");
+
+    // Fill signature
+    vs_sign_t *sign = (vs_sign_t *)&rm_user_request->current_owner_cert_and_sign[own_cert_sz];
+    uint16_t sign_sz;
+    uint8_t *sign_data = request_buf;
+    size_t sign_data_sz = sizeof(vs_scrt_ausr_request_t) + own_cert_sz;
+    STATUS_CHECK_RET(vs_crypto_hl_sign(_secmodule, sign_data, sign_data_sz, sign, buf_sz, &sign_sz),
+                     "Cannot sign request");
+
+    // Send request
+    uint16_t request_sz = sign_data_sz + sign_sz;
+    STATUS_CHECK_RET(vs_snap_send_request(netif, mac, VS_SCRT_SERVICE_ID, VS_SCRT_RUSR, request_buf, request_sz),
+                     "Cannot send request");
+
+    return VS_CODE_OK;
 }
 
 /******************************************************************************/
@@ -94,7 +204,25 @@ vs_snap_scrt_get_users(const vs_netif_t *netif,
                        vs_user_type_t user_type,
                        uint8_t offset,
                        uint8_t max_amount) {
-    return VS_CODE_ERR_NOT_IMPLEMENTED;
+    vs_status_e ret_code;
+    vs_scrt_gusr_request_t get_users_request;
+
+    // Fill request
+    VS_IOT_MEMSET(&get_users_request, 0, VS_SCRT_CLIENT_REQUEST_MAX_SZ); // Clean
+    get_users_request.user_type = user_type;                             // User type
+    get_users_request.max_users_per_resp = max_amount;                   // Maximum users in response
+    get_users_request.users_offset = offset;                             // Offset of the first user in response
+
+    // Send request
+    STATUS_CHECK_RET(vs_snap_send_request(netif,
+                                          mac,
+                                          VS_SCRT_SERVICE_ID,
+                                          VS_SCRT_GUSR,
+                                          (uint8_t *)&get_users_request,
+                                          sizeof(vs_scrt_gusr_request_t)),
+                     "Cannot send request");
+
+    return VS_CODE_OK;
 }
 
 /******************************************************************************/
@@ -150,7 +278,11 @@ _scrt_service_response_processor(const struct vs_netif_t *netif,
 
 /******************************************************************************/
 const vs_snap_service_t *
-vs_snap_scrt_client(vs_snap_scrt_client_service_t impl) {
+vs_snap_scrt_client(vs_secmodule_impl_t *secmodule, vs_snap_scrt_client_service_t impl) {
+
+    CHECK_NOT_ZERO_RET(secmodule, NULL);
+
+    _secmodule = secmodule;
     _scrt_client.user_data = 0;
     _scrt_client.id = VS_SCRT_SERVICE_ID;
     _scrt_client.request_process = NULL;
