@@ -45,3 +45,13 @@ add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/secmodule)
 if(NOT ANDROID_QT AND NOT VIRGIL_IOT_MCU_BUILD)
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/converters)
 endif()
+
+#
+#   High-level crypto
+#
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/high-level)
+
+#
+#   Communication session
+#
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/session)

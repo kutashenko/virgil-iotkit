@@ -32,7 +32,7 @@
 //
 //  Lead Maintainer: Virgil Security Inc. <support@virgilsecurity.com>
 
- #define SCRT_SERVER 1
+#define SCRT_SERVER 1
 
 #if SCRT_SERVER
 
@@ -41,6 +41,7 @@
 #include <virgil/iot/protocols/snap/scrt/scrt-structs.h>
 #include <virgil/iot/protocols/snap/generated/snap_cvt.h>
 #include <virgil/iot/protocols/snap.h>
+#include <virgil/iot/session/session.h>
 #include <virgil/iot/status_code/status_code.h>
 #include <virgil/iot/logger/logger.h>
 #include <virgil/iot/macros/macros.h>
@@ -93,9 +94,7 @@ _verify_owner_cert(const vs_provision_cert_t *cert) {
 
     STATUS_CHECK_RET(vs_provision_verify_cert(cert), "Wrong owner's certificate");
 
-    STATUS_CHECK_RET(vs_users_get_name(VS_USER_OWNER,
-                                       (vs_pubkey_dated_t*)cert->raw_cert,
-                                       name, USER_NAME_SZ_MAX),
+    STATUS_CHECK_RET(vs_users_get_name(VS_USER_OWNER, (vs_pubkey_dated_t *)cert->raw_cert, name, USER_NAME_SZ_MAX),
                      "Cannot find required owner");
 
     VS_LOG_DEBUG("Verified user: %s", name);
@@ -110,7 +109,77 @@ _scrt_get_session_key_request_processor(const uint8_t *request,
                                         uint8_t *response,
                                         const uint16_t response_buf_sz,
                                         uint16_t *response_sz) {
-    return VS_CODE_ERR_NOT_IMPLEMENTED;
+    vs_status_e ret_code;
+    const vs_scrt_gsek_request_t *get_session_key_request = (const vs_scrt_gsek_request_t *)request;
+    vs_scrt_gsek_response_t *get_session_key_response = (vs_scrt_gsek_response_t *)response;
+
+    // Check input parameters
+    CHECK_NOT_ZERO_RET(request, VS_CODE_ERR_INCORRECT_ARGUMENT);
+    CHECK_RET(request_sz > sizeof(vs_scrt_gsek_request_t),
+              VS_CODE_ERR_INCORRECT_ARGUMENT,
+              "Unsupported request structure vs_scrt_gsek_request_t");
+    CHECK_NOT_ZERO_RET(response, VS_CODE_ERR_INCORRECT_ARGUMENT);
+    CHECK_NOT_ZERO_RET(response_sz, VS_CODE_ERR_INCORRECT_ARGUMENT);
+    CHECK_RET(response_buf_sz > (sizeof(vs_scrt_gsek_response_t) + sizeof(vs_provision_cert_t) + sizeof(vs_sign_t)),
+              VS_CODE_ERR_INCORRECT_ARGUMENT,
+              "Unsupported request structure vs_scrt_gsek_response_t");
+
+
+    // Verify request and user rights
+    //    >>>>
+
+    // Fill response
+
+    //      Copy nonce from request
+    VS_IOT_MEMCPY(get_session_key_response->requested_nonce, get_session_key_request->nonce, SCRT_NONCE_SZ);
+
+    //      Fill session key
+    STATUS_CHECK_RET(vs_session_get_own_key(&get_session_key_response->session_key), "Cannot get own session key");
+
+    //      Size of buffer for certificate and response signature
+    uint16_t buf_sz = response_buf_sz - sizeof(vs_scrt_gsek_response_t);
+
+    //      Fill own certificate
+    vs_provision_cert_t *own_cert = (vs_provision_cert_t *)get_session_key_response->device_cert_and_sign;
+    STATUS_CHECK_RET(vs_provision_own_cert(own_cert, buf_sz), "Cannot get own certificate");
+    uint16_t cert_sz;
+    STATUS_CHECK_RET(vs_provision_cert_size(own_cert, &cert_sz), "Cannot get size of own certificate");
+
+    //      Sign response
+    buf_sz -= cert_sz;
+    vs_sign_t *sign;
+    sign = (vs_sign_t *)&get_session_key_response->device_cert_and_sign[cert_sz];
+
+    //          Calculate hash of stuff under signature
+    int hash_size;
+    sign->hash_type = VS_HASH_SHA_256;
+    vs_pubkey_dated_t *own_key = (vs_pubkey_dated_t *)own_cert->raw_cert;
+    sign->ec_type = own_key->pubkey.ec_type;
+    sign->signer_type = VS_KEY_IOT_DEVICE;
+    hash_size = vs_secmodule_get_hash_len(sign->hash_type);
+    CHECK_RET(hash_size > 0, VS_CODE_ERR_CRYPTO, "Unsupported hash type");
+    uint8_t hash[hash_size];
+    size_t sign_data_sz = sizeof(vs_scrt_gsek_response_t) + cert_sz;
+    uint16_t res_sz;
+    STATUS_CHECK_RET(_secmodule->hash(sign->hash_type, response, sign_data_sz, hash, hash_size, &res_sz),
+                     "Error hash create");
+
+    // TODO: check size
+
+    uint16_t sign_sz;
+    STATUS_CHECK_RET(
+            _secmodule->ecdsa_sign(PRIVATE_KEY_SLOT, sign->hash_type, hash, sign->raw_sign_pubkey, buf_sz, &sign_sz),
+            "Unable to sign");
+
+    VS_IOT_MEMCPY(&sign->raw_sign_pubkey[sign_sz],
+                  &own_key->pubkey.meta_and_pubkey[own_key->pubkey.meta_data_sz],
+                  vs_secmodule_get_pubkey_len(own_key->pubkey.ec_type));
+
+    *response_sz = sizeof(vs_scrt_gsek_response_t) + cert_sz + sizeof(vs_sign_t) +
+                   vs_secmodule_get_signature_len(own_key->pubkey.ec_type) +
+                   vs_secmodule_get_pubkey_len(own_key->pubkey.ec_type);
+
+    return VS_CODE_OK;
 }
 
 /******************************************************************/
@@ -124,6 +193,8 @@ _scrt_add_user_request_processor(const uint8_t *request,
     const vs_scrt_ausr_request_t *add_user_info = (const vs_scrt_ausr_request_t *)request;
     const vs_provision_cert_t *owner_cert;
     const vs_provision_cert_t *new_user_cert;
+    uint16_t owner_cert_sz;
+    uint16_t new_user_cert_sz;
     size_t new_user_name_sz;
     char found_name[USER_NAME_SZ_MAX];
 
@@ -149,8 +220,9 @@ _scrt_add_user_request_processor(const uint8_t *request,
     // Check a new user
     STATUS_CHECK_RET(vs_provision_verify_cert(new_user_cert), "Cannot verify a new user");
     if (VS_CODE_OK == vs_users_get_name((vs_user_type_t)add_user_info->user_type,
-                                        (vs_pubkey_dated_t*)new_user_cert->raw_cert,
-                                        found_name, USER_NAME_SZ_MAX)) {
+                                        (vs_pubkey_dated_t *)new_user_cert->raw_cert,
+                                        found_name,
+                                        USER_NAME_SZ_MAX)) {
         VS_LOG_WARNING("User already present: %s", (const char *)add_user_info->new_user_name);
         return VS_CODE_ERR_USER_PRESENT;
     }
@@ -161,18 +233,22 @@ _scrt_add_user_request_processor(const uint8_t *request,
     uint8_t *raw_pubkey;
     int hash_size;
 
-    ???
+    STATUS_CHECK_RET(vs_provision_cert_size(owner_cert, &owner_cert_sz), "Cannot get size of owner certificate");
+    STATUS_CHECK_RET(vs_provision_cert_size(new_user_cert, &new_user_cert_sz),
+                     "Cannot get size of a new user  certificate");
+
+    sign = (vs_sign_t *)&add_user_info->certs_and_sign[owner_cert_sz + new_user_cert_sz];
 
     hash_size = vs_secmodule_get_hash_len(sign->hash_type);
     CHECK_RET(hash_size > 0, VS_CODE_ERR_CRYPTO, "Unsupported hash type");
     uint8_t hash[hash_size];
-    size_t signed_data_sz = sizeof(vs_scrt_rusr_request_t) + cert_sz;
+    size_t signed_data_sz = sizeof(vs_scrt_ausr_request_t) + owner_cert_sz + new_user_cert_sz;
     uint16_t res_sz;
     STATUS_CHECK_RET(_secmodule->hash(sign->hash_type, request, signed_data_sz, hash, hash_size, &res_sz),
                      "Error hash create");
 
     // Verify signature
-    dated_key = (vs_pubkey_dated_t *)current_owner_cert->raw_cert;
+    dated_key = (vs_pubkey_dated_t *)owner_cert->raw_cert;
     raw_pubkey = &dated_key->pubkey.meta_and_pubkey[dated_key->pubkey.meta_data_sz];
     STATUS_CHECK_RET(_secmodule->ecdsa_verify(sign->ec_type,
                                               raw_pubkey,
@@ -186,7 +262,7 @@ _scrt_add_user_request_processor(const uint8_t *request,
     // Add a new user
     STATUS_CHECK_RET(vs_users_add((vs_user_type_t)add_user_info->user_type,
                                   (const char *)add_user_info->new_user_name,
-                                  (vs_pubkey_dated_t*)new_user_cert->raw_cert),
+                                  (vs_pubkey_dated_t *)new_user_cert->raw_cert),
                      "Cannot add a new user");
 
     return VS_CODE_OK;
@@ -216,7 +292,7 @@ _scrt_remove_user_request_processor(const uint8_t *request,
     CHECK_NOT_ZERO_RET(rm_user_name_sz < USER_NAME_SZ_MAX, VS_CODE_ERR_INCORRECT_ARGUMENT);
 
     // Check owner
-    current_owner_cert = (vs_provision_cert_t*)remove_user_info->current_owner_cert_and_sign;
+    current_owner_cert = (vs_provision_cert_t *)remove_user_info->current_owner_cert_and_sign;
     STATUS_CHECK_RET(_verify_owner_cert(current_owner_cert), "Wrong owner");
 
     // Check data signature
@@ -280,8 +356,8 @@ _scrt_get_users_request_processor(const uint8_t *request,
     CHECK_NOT_ZERO_RET(get_users_request->user_type < VS_USER_TYPE_MAX, VS_CODE_ERR_INCORRECT_ARGUMENT);
     CHECK_NOT_ZERO_RET(response, VS_CODE_ERR_INCORRECT_ARGUMENT);
     CHECK_NOT_ZERO_RET(response_sz, VS_CODE_ERR_INCORRECT_ARGUMENT);
-    CHECK_RET(response_buf_sz > (sizeof(vs_scrt_gusr_response_t)
-                                 + get_users_response->users_in_resp * sizeof(vs_scrt_gusr_tiny_t)),
+    CHECK_RET(response_buf_sz > (sizeof(vs_scrt_gusr_response_t) +
+                                 get_users_response->users_in_resp * sizeof(vs_scrt_gusr_tiny_t)),
               VS_CODE_ERR_INCORRECT_ARGUMENT,
               "Unsupported request structure vs_scrt_gusr_response_t");
 
@@ -290,12 +366,17 @@ _scrt_get_users_request_processor(const uint8_t *request,
     get_users_response->users_offset = get_users_request->users_offset;
     get_users_response->users_in_resp = 0;
 
+    *response_sz = sizeof(vs_scrt_gusr_response_t);
+
     tiny_info = (vs_scrt_gusr_tiny_t *)get_users_response->users;
     for (i = 0; i < get_users_request->max_users_per_resp; i++) {
         ret_code = vs_users_get_by_num((vs_user_type_t)get_users_request->user_type,
                                        get_users_request->users_offset + i,
-                                       (char *)tiny_info->user_name, USER_NAME_SZ_MAX,
-                                       read_key_dated, USER_KEY_BUF_SZ_MAX, &key_sz);
+                                       (char *)tiny_info->user_name,
+                                       USER_NAME_SZ_MAX,
+                                       read_key_dated,
+                                       USER_KEY_BUF_SZ_MAX,
+                                       &key_sz);
 
         if (VS_CODE_ERR_USER_NOT_FOUND == ret_code) {
             VS_LOG_DEBUG("No more users to load");
@@ -308,13 +389,13 @@ _scrt_get_users_request_processor(const uint8_t *request,
         }
 
         key_sz -= sizeof(vs_pubkey_dated_t) - sizeof(vs_pubkey_t);
-        VS_IOT_MEMCPY(&tiny_info->user_pub_key,
-                      &read_key_dated->pubkey,
-                      key_sz);
+        VS_IOT_MEMCPY(&tiny_info->user_pub_key, &read_key_dated->pubkey, key_sz);
 
         ++get_users_response->users_in_resp;
+        uint16_t offset = USER_NAME_SZ_MAX + key_sz;
+        *response_sz += offset;
 
-        tiny_info = (vs_scrt_gusr_tiny_t *)((uint8_t *)tiny_info + USER_NAME_SZ_MAX + key_sz);
+        tiny_info = (vs_scrt_gusr_tiny_t *)((uint8_t *)tiny_info + offset);
     }
 
     return VS_CODE_OK;

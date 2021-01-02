@@ -148,6 +148,8 @@ function(add_snap _targetname _firmware_update _definitions)
             vs-module-provision
             vs-module-users
             $<$<BOOL:${_firmware_update}>:vs-module-firmware>
+            vs-module-crypto-high-level
+            vs-module-crypto-session
 
             PRIVATE
             macros
