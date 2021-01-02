@@ -47,6 +47,7 @@
 #include <virgil/iot/macros/macros.h>
 #include <virgil/iot/users/users.h>
 #include <virgil/iot/secmodule/secmodule-helpers.h>
+#include <virgil/iot/high-level/high-level-crypto.h>
 #include <stdlib-config.h>
 #include <endian-config.h>
 
@@ -88,11 +89,11 @@ _scrt_info_request_processor(const uint8_t *request,
 
 /******************************************************************/
 static vs_status_e
-_verify_owner_cert(const vs_provision_cert_t *cert) {
+_verify_owner_cert(const vs_cert_t *cert) {
     vs_status_e ret_code;
     char name[USER_NAME_SZ_MAX];
 
-    STATUS_CHECK_RET(vs_provision_verify_cert(cert), "Wrong owner's certificate");
+    STATUS_CHECK_RET(vs_crypto_hl_verify_cert(cert), "Wrong owner's certificate");
 
     STATUS_CHECK_RET(vs_users_get_name(VS_USER_OWNER, (vs_pubkey_dated_t *)cert->raw_cert, name, USER_NAME_SZ_MAX),
                      "Cannot find required owner");
@@ -120,13 +121,28 @@ _scrt_get_session_key_request_processor(const uint8_t *request,
               "Unsupported request structure vs_scrt_gsek_request_t");
     CHECK_NOT_ZERO_RET(response, VS_CODE_ERR_INCORRECT_ARGUMENT);
     CHECK_NOT_ZERO_RET(response_sz, VS_CODE_ERR_INCORRECT_ARGUMENT);
-    CHECK_RET(response_buf_sz > (sizeof(vs_scrt_gsek_response_t) + sizeof(vs_provision_cert_t) + sizeof(vs_sign_t)),
+    CHECK_RET(response_buf_sz > (sizeof(vs_scrt_gsek_response_t) + sizeof(vs_cert_t) + sizeof(vs_sign_t)),
               VS_CODE_ERR_INCORRECT_ARGUMENT,
               "Unsupported request structure vs_scrt_gsek_response_t");
 
 
-    // Verify request and user rights
-    //    >>>>
+    // Verify request
+    const vs_cert_t *request_owner_cert = (vs_cert_t *)get_session_key_request->user_cert_and_sign;
+    uint16_t request_owner_cert_sz;
+    STATUS_CHECK_RET(vs_crypto_hl_cert_size(request_owner_cert, &request_owner_cert_sz), "Cannot get size of cert");
+    const uint8_t *request_signed_data = request;
+    const size_t request_signed_data_sz = sizeof(vs_scrt_gsek_response_t) + request_owner_cert_sz;
+    const vs_sign_t *request_sign = (vs_sign_t *)&get_session_key_request->user_cert_and_sign[request_owner_cert_sz];
+    const vs_pubkey_dated_t *request_required_signer = (vs_pubkey_dated_t *)request_owner_cert->raw_cert;
+    STATUS_CHECK_RET(
+            vs_crypto_hl_verify(
+                    _secmodule, request_signed_data, request_signed_data_sz, request_sign, request_required_signer),
+            "Cannot verify request");
+
+    // Check user permissions
+    STATUS_CHECK_RET(_verify_owner_cert(request_owner_cert), "This user cannot request session key");
+    // TODO: Check guest permissions
+
 
     // Fill response
 
@@ -140,44 +156,22 @@ _scrt_get_session_key_request_processor(const uint8_t *request,
     uint16_t buf_sz = response_buf_sz - sizeof(vs_scrt_gsek_response_t);
 
     //      Fill own certificate
-    vs_provision_cert_t *own_cert = (vs_provision_cert_t *)get_session_key_response->device_cert_and_sign;
+    vs_cert_t *own_cert = (vs_cert_t *)get_session_key_response->device_cert_and_sign;
     STATUS_CHECK_RET(vs_provision_own_cert(own_cert, buf_sz), "Cannot get own certificate");
     uint16_t cert_sz;
-    STATUS_CHECK_RET(vs_provision_cert_size(own_cert, &cert_sz), "Cannot get size of own certificate");
+    STATUS_CHECK_RET(vs_crypto_hl_cert_size(own_cert, &cert_sz), "Cannot get size of own certificate");
 
     //      Sign response
     buf_sz -= cert_sz;
     vs_sign_t *sign;
-    sign = (vs_sign_t *)&get_session_key_response->device_cert_and_sign[cert_sz];
-
-    //          Calculate hash of stuff under signature
-    int hash_size;
-    sign->hash_type = VS_HASH_SHA_256;
-    vs_pubkey_dated_t *own_key = (vs_pubkey_dated_t *)own_cert->raw_cert;
-    sign->ec_type = own_key->pubkey.ec_type;
-    sign->signer_type = VS_KEY_IOT_DEVICE;
-    hash_size = vs_secmodule_get_hash_len(sign->hash_type);
-    CHECK_RET(hash_size > 0, VS_CODE_ERR_CRYPTO, "Unsupported hash type");
-    uint8_t hash[hash_size];
-    size_t sign_data_sz = sizeof(vs_scrt_gsek_response_t) + cert_sz;
-    uint16_t res_sz;
-    STATUS_CHECK_RET(_secmodule->hash(sign->hash_type, response, sign_data_sz, hash, hash_size, &res_sz),
-                     "Error hash create");
-
-    // TODO: check size
-
     uint16_t sign_sz;
-    STATUS_CHECK_RET(
-            _secmodule->ecdsa_sign(PRIVATE_KEY_SLOT, sign->hash_type, hash, sign->raw_sign_pubkey, buf_sz, &sign_sz),
-            "Unable to sign");
+    sign = (vs_sign_t *)&get_session_key_response->device_cert_and_sign[cert_sz];
+    uint8_t *sign_data = response;
+    size_t sign_data_sz = sizeof(vs_scrt_gsek_response_t) + cert_sz;
+    STATUS_CHECK_RET(vs_crypto_hl_sign(_secmodule, sign_data, sign_data_sz, sign, buf_sz, &sign_sz),
+                     "Cannot sign response");
 
-    VS_IOT_MEMCPY(&sign->raw_sign_pubkey[sign_sz],
-                  &own_key->pubkey.meta_and_pubkey[own_key->pubkey.meta_data_sz],
-                  vs_secmodule_get_pubkey_len(own_key->pubkey.ec_type));
-
-    *response_sz = sizeof(vs_scrt_gsek_response_t) + cert_sz + sizeof(vs_sign_t) +
-                   vs_secmodule_get_signature_len(own_key->pubkey.ec_type) +
-                   vs_secmodule_get_pubkey_len(own_key->pubkey.ec_type);
+    *response_sz = sizeof(vs_scrt_gsek_response_t) + cert_sz + sign_sz;
 
     return VS_CODE_OK;
 }
@@ -191,8 +185,8 @@ _scrt_add_user_request_processor(const uint8_t *request,
                                  uint16_t *response_sz) {
     vs_status_e ret_code;
     const vs_scrt_ausr_request_t *add_user_info = (const vs_scrt_ausr_request_t *)request;
-    const vs_provision_cert_t *owner_cert;
-    const vs_provision_cert_t *new_user_cert;
+    const vs_cert_t *owner_cert;
+    const vs_cert_t *new_user_cert;
     uint16_t owner_cert_sz;
     uint16_t new_user_cert_sz;
     size_t new_user_name_sz;
@@ -211,14 +205,14 @@ _scrt_add_user_request_processor(const uint8_t *request,
     CHECK_NOT_ZERO_RET(new_user_name_sz < USER_NAME_SZ_MAX, VS_CODE_ERR_INCORRECT_ARGUMENT);
 
     // Fill cert pointers
-    new_user_cert = (const vs_provision_cert_t *)add_user_info->certs_and_sign;
-    owner_cert = (const vs_provision_cert_t *)&add_user_info->certs_and_sign[add_user_info->current_owner_cert_sz];
+    new_user_cert = (const vs_cert_t *)add_user_info->certs_and_sign;
+    owner_cert = (const vs_cert_t *)&add_user_info->certs_and_sign[add_user_info->current_owner_cert_sz];
 
     // Check owner
     STATUS_CHECK_RET(_verify_owner_cert(owner_cert), "Wrong owner");
 
     // Check a new user
-    STATUS_CHECK_RET(vs_provision_verify_cert(new_user_cert), "Cannot verify a new user");
+    STATUS_CHECK_RET(vs_crypto_hl_verify_cert(new_user_cert), "Cannot verify a new user");
     if (VS_CODE_OK == vs_users_get_name((vs_user_type_t)add_user_info->user_type,
                                         (vs_pubkey_dated_t *)new_user_cert->raw_cert,
                                         found_name,
@@ -227,37 +221,21 @@ _scrt_add_user_request_processor(const uint8_t *request,
         return VS_CODE_ERR_USER_PRESENT;
     }
 
-    // Calculate hash of stuff under signature
-    vs_sign_t *sign;
-    vs_pubkey_dated_t *dated_key;
-    uint8_t *raw_pubkey;
-    int hash_size;
-
-    STATUS_CHECK_RET(vs_provision_cert_size(owner_cert, &owner_cert_sz), "Cannot get size of owner certificate");
-    STATUS_CHECK_RET(vs_provision_cert_size(new_user_cert, &new_user_cert_sz),
+    // Verify request
+    STATUS_CHECK_RET(vs_crypto_hl_cert_size(owner_cert, &owner_cert_sz), "Cannot get size of owner certificate");
+    STATUS_CHECK_RET(vs_crypto_hl_cert_size(new_user_cert, &new_user_cert_sz),
                      "Cannot get size of a new user  certificate");
-
-    sign = (vs_sign_t *)&add_user_info->certs_and_sign[owner_cert_sz + new_user_cert_sz];
-
-    hash_size = vs_secmodule_get_hash_len(sign->hash_type);
-    CHECK_RET(hash_size > 0, VS_CODE_ERR_CRYPTO, "Unsupported hash type");
-    uint8_t hash[hash_size];
-    size_t signed_data_sz = sizeof(vs_scrt_ausr_request_t) + owner_cert_sz + new_user_cert_sz;
-    uint16_t res_sz;
-    STATUS_CHECK_RET(_secmodule->hash(sign->hash_type, request, signed_data_sz, hash, hash_size, &res_sz),
-                     "Error hash create");
-
-    // Verify signature
-    dated_key = (vs_pubkey_dated_t *)owner_cert->raw_cert;
-    raw_pubkey = &dated_key->pubkey.meta_and_pubkey[dated_key->pubkey.meta_data_sz];
-    STATUS_CHECK_RET(_secmodule->ecdsa_verify(sign->ec_type,
-                                              raw_pubkey,
-                                              vs_secmodule_get_pubkey_len(dated_key->pubkey.ec_type),
-                                              sign->hash_type,
-                                              hash,
-                                              sign->raw_sign_pubkey,
-                                              vs_secmodule_get_signature_len(sign->ec_type)),
-                     "Signature is wrong");
+    const vs_cert_t *request_owner_cert = owner_cert;
+    uint16_t request_owner_cert_sz;
+    STATUS_CHECK_RET(vs_crypto_hl_cert_size(request_owner_cert, &request_owner_cert_sz), "Cannot get size of cert");
+    const uint8_t *request_signed_data = request;
+    const size_t request_signed_data_sz = sizeof(vs_scrt_gsek_response_t) + request_owner_cert_sz;
+    const vs_sign_t *request_sign = (vs_sign_t *)&add_user_info->certs_and_sign[owner_cert_sz + new_user_cert_sz];
+    const vs_pubkey_dated_t *request_required_signer = (vs_pubkey_dated_t *)request_owner_cert->raw_cert;
+    STATUS_CHECK_RET(
+            vs_crypto_hl_verify(
+                    _secmodule, request_signed_data, request_signed_data_sz, request_sign, request_required_signer),
+            "Cannot verify request");
 
     // Add a new user
     STATUS_CHECK_RET(vs_users_add((vs_user_type_t)add_user_info->user_type,
@@ -278,8 +256,7 @@ _scrt_remove_user_request_processor(const uint8_t *request,
     vs_status_e ret_code;
     const vs_scrt_rusr_request_t *remove_user_info = (const vs_scrt_rusr_request_t *)request;
     size_t rm_user_name_sz;
-    vs_provision_cert_t *current_owner_cert;
-    uint16_t cert_sz;
+    vs_cert_t *current_owner_cert;
 
     // Check input parameters
     CHECK_NOT_ZERO_RET(request, VS_CODE_ERR_INCORRECT_ARGUMENT);
@@ -292,37 +269,21 @@ _scrt_remove_user_request_processor(const uint8_t *request,
     CHECK_NOT_ZERO_RET(rm_user_name_sz < USER_NAME_SZ_MAX, VS_CODE_ERR_INCORRECT_ARGUMENT);
 
     // Check owner
-    current_owner_cert = (vs_provision_cert_t *)remove_user_info->current_owner_cert_and_sign;
+    current_owner_cert = (vs_cert_t *)remove_user_info->current_owner_cert_and_sign;
     STATUS_CHECK_RET(_verify_owner_cert(current_owner_cert), "Wrong owner");
 
-    // Check data signature
-    vs_sign_t *sign;
-    vs_pubkey_dated_t *dated_key;
-    uint8_t *raw_pubkey;
-    int hash_size;
-    STATUS_CHECK_RET(vs_provision_cert_size(current_owner_cert, &cert_sz), "Cannot get certificate size");
-    sign = (vs_sign_t *)&remove_user_info->current_owner_cert_and_sign[cert_sz];
-
-    // Calculate hash of stuff under signature
-    hash_size = vs_secmodule_get_hash_len(sign->hash_type);
-    CHECK_RET(hash_size > 0, VS_CODE_ERR_CRYPTO, "Unsupported hash type");
-    uint8_t hash[hash_size];
-    size_t signed_data_sz = sizeof(vs_scrt_rusr_request_t) + cert_sz;
-    uint16_t res_sz;
-    STATUS_CHECK_RET(_secmodule->hash(sign->hash_type, request, signed_data_sz, hash, hash_size, &res_sz),
-                     "Error hash create");
-
-    // Verify signature
-    dated_key = (vs_pubkey_dated_t *)current_owner_cert->raw_cert;
-    raw_pubkey = &dated_key->pubkey.meta_and_pubkey[dated_key->pubkey.meta_data_sz];
-    STATUS_CHECK_RET(_secmodule->ecdsa_verify(sign->ec_type,
-                                              raw_pubkey,
-                                              vs_secmodule_get_pubkey_len(dated_key->pubkey.ec_type),
-                                              sign->hash_type,
-                                              hash,
-                                              sign->raw_sign_pubkey,
-                                              vs_secmodule_get_signature_len(sign->ec_type)),
-                     "Signature is wrong");
+    // Verify request
+    const vs_cert_t *request_owner_cert = current_owner_cert;
+    uint16_t request_owner_cert_sz;
+    STATUS_CHECK_RET(vs_crypto_hl_cert_size(request_owner_cert, &request_owner_cert_sz), "Cannot get size of cert");
+    const uint8_t *request_signed_data = request;
+    const size_t request_signed_data_sz = sizeof(vs_scrt_gsek_response_t) + request_owner_cert_sz;
+    const vs_sign_t *request_sign = (vs_sign_t *)&remove_user_info->current_owner_cert_and_sign[request_owner_cert_sz];
+    const vs_pubkey_dated_t *request_required_signer = (vs_pubkey_dated_t *)request_owner_cert->raw_cert;
+    STATUS_CHECK_RET(
+            vs_crypto_hl_verify(
+                    _secmodule, request_signed_data, request_signed_data_sz, request_sign, request_required_signer),
+            "Cannot verify request");
 
     // Remove user
     STATUS_CHECK_RET(vs_users_remove_by_name((vs_user_type_t)remove_user_info->user_type,

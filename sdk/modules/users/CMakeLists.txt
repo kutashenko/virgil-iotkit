@@ -40,6 +40,7 @@ target_link_libraries(vs-module-users
         vs-module-secbox
         macros
         storage_hal
+        vs-module-crypto-high-level
         )
 #
 #   Common include directories

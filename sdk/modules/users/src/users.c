@@ -25,6 +25,7 @@
 #include <virgil/iot/logger/logger.h>
 #include <virgil/iot/macros/macros.h>
 #include <virgil/iot/provision/provision.h>
+#include <virgil/iot/high-level/high-level-crypto.h>
 #include <stdlib-config.h>
 #include <global-hal.h>
 
@@ -128,7 +129,7 @@ _get_by_raw_pos(vs_user_type_t type,
     STATUS_CHECK_RET(_create_file_name(type, pos, &id), "Cannot create file name for user file");
     STATUS_CHECK_RET(vs_secbox_load(id, data_buf, USER_BUF_SZ_MAX, &data_sz), "Cannot load user data");
     loaded_pubkey = (vs_pubkey_dated_t *)&data_buf[USER_NAME_SZ_MAX];
-    STATUS_CHECK_RET(vs_provision_key_size(loaded_pubkey, key_sz), "Cannot get key size");
+    STATUS_CHECK_RET(vs_crypto_hl_dated_key_size(loaded_pubkey, key_sz), "Cannot get key size");
     CHECK_RET(key_buf_sz >= *key_sz, VS_CODE_ERR_TOO_SMALL_BUFFER, "Key buffer too small");
 
     VS_IOT_MEMCPY(name, data_buf, USER_NAME_SZ_MAX);
@@ -310,7 +311,7 @@ vs_users_add(vs_user_type_t type, const char *name, const vs_pubkey_dated_t *pub
 
     // Save user info
     STATUS_CHECK_RET(_create_file_name(type, pos, &id), "Cannot create file name for user file");
-    STATUS_CHECK_RET(vs_provision_key_size(pubkey, &pubkey_sz), "Cannot calculate a size of public key");
+    STATUS_CHECK_RET(vs_crypto_hl_dated_key_size(pubkey, &pubkey_sz), "Cannot calculate a size of public key");
     size_t required_size = USER_NAME_SZ_MAX + pubkey_sz;
     VS_LOG_DEBUG("User info size: %u", (unsigned int)required_size);
     uint8_t save_data[required_size];

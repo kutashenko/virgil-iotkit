@@ -425,7 +425,7 @@ vs_provision_tl_find_next_key(vs_provision_tl_find_ctx_t *search_ctx,
 
 /******************************************************************************/
 vs_status_e
-vs_provision_own_cert(vs_provision_cert_t *cert,
+vs_provision_own_cert(vs_cert_t *cert,
                       uint16_t buffer_sz) {
 
     uint16_t key_sz = 0;
@@ -473,38 +473,6 @@ vs_provision_own_cert(vs_provision_cert_t *cert,
     }
 
     return VS_CODE_OK;
-}
-
-/******************************************************************************/
-vs_status_e
-vs_provision_key_size(const vs_pubkey_dated_t *pubkey, uint16_t *key_sz) {
-    CHECK_NOT_ZERO_RET(pubkey, VS_CODE_ERR_ZERO_ARGUMENT);
-    CHECK_NOT_ZERO_RET(key_sz, VS_CODE_ERR_ZERO_ARGUMENT);
-
-    *key_sz = sizeof(vs_pubkey_dated_t)
-              + vs_secmodule_get_pubkey_len(pubkey->pubkey.ec_type)
-              + pubkey->pubkey.meta_data_sz;
-
-    return VS_CODE_OK;
-}
-
-/******************************************************************************/
-vs_status_e
-vs_provision_cert_size(const vs_provision_cert_t *cert, uint16_t *cert_sz) {
-    CHECK_NOT_ZERO_RET(cert, VS_CODE_ERR_ZERO_ARGUMENT);
-    CHECK_NOT_ZERO_RET(cert_sz, VS_CODE_ERR_ZERO_ARGUMENT);
-
-    *cert_sz = sizeof(vs_provision_cert_t)
-              + cert->key_sz
-              + cert->signature_sz;
-
-    return VS_CODE_OK;
-}
-
-/******************************************************************************/
-vs_status_e
-vs_provision_verify_cert(const vs_provision_cert_t *cert) {
-    return VS_CODE_ERR_NOT_IMPLEMENTED;
 }
 
 /******************************************************************************/

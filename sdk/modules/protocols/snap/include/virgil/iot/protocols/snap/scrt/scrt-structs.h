@@ -53,9 +53,9 @@ extern "C" {
 // --------------------------------------------------------
 // INFO: Could be sent in a plain text
 typedef struct __attribute__((__packed__)) {
-    uint8_t provisioned;          /**< Device has provision */
-    uint8_t owners_count;         /**< Device has owners */
-    vs_provision_cert_t own_cert; /**< Peer key and its signature */
+    uint8_t provisioned;  /**< Device has provision */
+    uint8_t owners_count; /**< Device has owners */
+    vs_cert_t own_cert;   /**< Peer key and its signature */
 } vs_scrt_info_response_t;
 
 // --------------------------------------------------------
