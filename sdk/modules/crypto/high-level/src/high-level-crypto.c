@@ -38,7 +38,6 @@ vs_crypto_hl_verify(vs_secmodule_impl_t *_secmodule,
     CHECK_NOT_ZERO_RET(sign, VS_CODE_ERR_NULLPTR_ARGUMENT);
 
     vs_status_e ret_code;
-    vs_pubkey_dated_t *dated_key;
     int hash_size;
 
     // Calculate hash of stuff under signature
@@ -51,7 +50,7 @@ vs_crypto_hl_verify(vs_secmodule_impl_t *_secmodule,
     // Verify signature
     uint16_t sign_sz = vs_secmodule_get_signature_len(sign->ec_type);
     const uint8_t *signer_key = &sign->raw_sign_pubkey[sign_sz];
-    size_t signer_key_sz = vs_secmodule_get_pubkey_len(dated_key->pubkey.ec_type);
+    size_t signer_key_sz = vs_secmodule_get_pubkey_len(sign->ec_type);
     STATUS_CHECK_RET(
             _secmodule->ecdsa_verify(
                     sign->ec_type, signer_key, signer_key_sz, sign->hash_type, hash, sign->raw_sign_pubkey, sign_sz),
@@ -145,8 +144,30 @@ vs_crypto_hl_cert_size(const vs_cert_t *cert, uint16_t *cert_sz) {
 
 /******************************************************************************/
 vs_status_e
-vs_crypto_hl_verify_cert(const vs_cert_t *cert) {
-    return VS_CODE_ERR_NOT_IMPLEMENTED;
+vs_crypto_hl_verify_cert(vs_secmodule_impl_t *_secmodule, const vs_cert_t *cert) {
+    vs_status_e ret_code;
+
+    // Check input parameters
+    CHECK_NOT_ZERO_RET(_secmodule, VS_CODE_ERR_ZERO_ARGUMENT);
+    CHECK_NOT_ZERO_RET(cert, VS_CODE_ERR_ZERO_ARGUMENT);
+
+    // Get certificate parts
+    const vs_pubkey_dated_t *key = (vs_pubkey_dated_t *)cert->raw_cert;
+    const vs_sign_t *sign = (vs_sign_t *)&cert->raw_cert[cert->key_sz];
+    uint16_t key_sz;
+
+    // Check public key size
+    STATUS_CHECK_RET(vs_crypto_hl_dated_key_size(key, &key_sz), "Cannot get key size");
+    CHECK_RET(key_sz == cert->key_sz, VS_CODE_ERR_INCORRECT_ARGUMENT, "Incorrect certificate");
+
+    // Check if signature correct
+    STATUS_CHECK_RET(vs_crypto_hl_verify(_secmodule, (const uint8_t *)key, key_sz, sign, NULL),
+                     "Cannot verify certificate");
+
+    // TODO: Should we check for signer here ?
+
+
+    return VS_CODE_OK;
 }
 
 

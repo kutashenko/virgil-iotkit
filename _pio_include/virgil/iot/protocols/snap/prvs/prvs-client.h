@@ -144,7 +144,7 @@ vs_snap_prvs_enum_devices(const vs_netif_t *netif, vs_snap_prvs_dnid_list_t *lis
  *
  * \param[in] netif SNAP service descriptor. Must not be NULL.
  * \param[in] mac Device MAC address.
- * \param[out] asav_res #vs_pubkey_t buffer to be saved.
+ * \param[out] asav_res #vs_pubkey_dated_t buffer to be saved.
  * \param[in] buf_sz Buffer size
  * \param[in] wait_ms Time to wait response.
  *

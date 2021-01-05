@@ -93,7 +93,7 @@ _verify_owner_cert(const vs_cert_t *cert) {
     vs_status_e ret_code;
     char name[USER_NAME_SZ_MAX];
 
-    STATUS_CHECK_RET(vs_crypto_hl_verify_cert(cert), "Wrong owner's certificate");
+    STATUS_CHECK_RET(vs_crypto_hl_verify_cert(_secmodule, cert), "Wrong owner's certificate");
 
     STATUS_CHECK_RET(vs_users_get_name(VS_USER_OWNER, (vs_pubkey_dated_t *)cert->raw_cert, name, USER_NAME_SZ_MAX),
                      "Cannot find required owner");
@@ -208,11 +208,17 @@ _scrt_add_user_request_processor(const uint8_t *request,
     new_user_cert = (const vs_cert_t *)add_user_info->certs_and_sign;
     owner_cert = (const vs_cert_t *)&add_user_info->certs_and_sign[add_user_info->current_owner_cert_sz];
 
-    // Check owner
-    STATUS_CHECK_RET(_verify_owner_cert(owner_cert), "Wrong owner");
+    // Check owner if there is at least one owner present
+    uint16_t amount;
+    STATUS_CHECK_RET(vs_users_get_amount(VS_USER_OWNER, &amount), "Cannot get amount of owners");
+    if (amount) {
+        STATUS_CHECK_RET(_verify_owner_cert(owner_cert), "Wrong owner");
+    } else {
+        VS_LOG_INFO("Adding a new user without verification of owner, because no owners");
+    }
 
     // Check a new user
-    STATUS_CHECK_RET(vs_crypto_hl_verify_cert(new_user_cert), "Cannot verify a new user");
+    STATUS_CHECK_RET(vs_crypto_hl_verify_cert(_secmodule, new_user_cert), "Cannot verify a new user");
     if (VS_CODE_OK == vs_users_get_name((vs_user_type_t)add_user_info->user_type,
                                         (vs_pubkey_dated_t *)new_user_cert->raw_cert,
                                         found_name,
@@ -226,10 +232,9 @@ _scrt_add_user_request_processor(const uint8_t *request,
     STATUS_CHECK_RET(vs_crypto_hl_cert_size(new_user_cert, &new_user_cert_sz),
                      "Cannot get size of a new user  certificate");
     const vs_cert_t *request_owner_cert = owner_cert;
-    uint16_t request_owner_cert_sz;
-    STATUS_CHECK_RET(vs_crypto_hl_cert_size(request_owner_cert, &request_owner_cert_sz), "Cannot get size of cert");
     const uint8_t *request_signed_data = request;
-    const size_t request_signed_data_sz = sizeof(vs_scrt_gsek_response_t) + request_owner_cert_sz;
+    const size_t request_signed_data_sz =
+            sizeof(vs_scrt_ausr_request_t) + add_user_info->new_user_cert_sz + add_user_info->current_owner_cert_sz;
     const vs_sign_t *request_sign = (vs_sign_t *)&add_user_info->certs_and_sign[owner_cert_sz + new_user_cert_sz];
     const vs_pubkey_dated_t *request_required_signer = (vs_pubkey_dated_t *)request_owner_cert->raw_cert;
     STATUS_CHECK_RET(

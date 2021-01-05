@@ -39,7 +39,7 @@ vs_status_e
 vs_crypto_hl_cert_size(const vs_cert_t *cert, uint16_t *cert_sz);
 
 vs_status_e
-vs_crypto_hl_verify_cert(const vs_cert_t *cert);
+vs_crypto_hl_verify_cert(vs_secmodule_impl_t *_secmodule, const vs_cert_t *cert);
 
 vs_status_e
 vs_crypto_hl_verify(vs_secmodule_impl_t *_secmodule,

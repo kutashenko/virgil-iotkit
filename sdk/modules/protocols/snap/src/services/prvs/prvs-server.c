@@ -104,7 +104,7 @@ static vs_status_e
 vs_prvs_server_device_info(vs_snap_prvs_devi_t *device_info, uint16_t buf_sz) {
     uint16_t key_sz = 0;
     vs_secmodule_keypair_type_e ec_type;
-    vs_pubkey_t *own_pubkey;
+    vs_pubkey_dated_t *own_pubkey;
     uint16_t sign_sz = 0;
     vs_sign_t *sign;
     vs_status_e ret_code;
@@ -130,16 +130,18 @@ vs_prvs_server_device_info(vs_snap_prvs_devi_t *device_info, uint16_t buf_sz) {
     VS_IOT_MEMCPY(device_info->serial, vs_snap_device_serial(), VS_DEVICE_SERIAL_SIZE);
 
     // Fill own public key
-    own_pubkey = (vs_pubkey_t *)device_info->data;
-    STATUS_CHECK_RET(
-            _secmodule->get_pubkey(PRIVATE_KEY_SLOT, own_pubkey->meta_and_pubkey, PUBKEY_MAX_SZ, &key_sz, &ec_type),
-            "Unable to get public key");
+    own_pubkey = (vs_pubkey_dated_t *)device_info->data;
+    STATUS_CHECK_RET(_secmodule->get_pubkey(
+                             PRIVATE_KEY_SLOT, own_pubkey->pubkey.meta_and_pubkey, PUBKEY_MAX_SZ, &key_sz, &ec_type),
+                     "Unable to get public key");
 
-    own_pubkey->key_type = VS_KEY_IOT_DEVICE;
-    own_pubkey->ec_type = ec_type;
-    own_pubkey->meta_data_sz = 0;
-    device_info->data_sz = key_sz + sizeof(vs_pubkey_t);
-    sign = (vs_sign_t *)((uint8_t *)own_pubkey + key_sz + sizeof(vs_pubkey_t));
+    own_pubkey->pubkey.key_type = VS_KEY_IOT_DEVICE;
+    own_pubkey->pubkey.ec_type = ec_type;
+    own_pubkey->pubkey.meta_data_sz = 0;
+    own_pubkey->start_date = 0;
+    own_pubkey->expire_date = 0;
+    device_info->data_sz = key_sz + sizeof(vs_pubkey_dated_t);
+    sign = (vs_sign_t *)((uint8_t *)own_pubkey + key_sz + sizeof(vs_pubkey_dated_t));
 
     buf_sz -= device_info->data_sz;
 
@@ -175,7 +177,7 @@ vs_prvs_save_data(vs_snap_prvs_element_e element_id, const uint8_t *data, uint16
 
 /******************************************************************************/
 static vs_status_e
-vs_prvs_finalize_storage(vs_pubkey_t *asav_response, uint16_t *resp_sz) {
+vs_prvs_finalize_storage(vs_pubkey_dated_t *asav_response, uint16_t *resp_sz) {
     uint16_t key_sz = 0;
     vs_secmodule_keypair_type_e ec_type;
     vs_status_e ret_code;
@@ -197,14 +199,14 @@ vs_prvs_finalize_storage(vs_pubkey_t *asav_response, uint16_t *resp_sz) {
                          "Unable to create keypair");
     }
 
-    STATUS_CHECK_RET(
-            _secmodule->get_pubkey(PRIVATE_KEY_SLOT, asav_response->meta_and_pubkey, PUBKEY_MAX_SZ, &key_sz, &ec_type),
-            "Unable to get public key");
+    STATUS_CHECK_RET(_secmodule->get_pubkey(
+                             PRIVATE_KEY_SLOT, asav_response->pubkey.meta_and_pubkey, PUBKEY_MAX_SZ, &key_sz, &ec_type),
+                     "Unable to get public key");
 
-    asav_response->key_type = VS_KEY_IOT_DEVICE;
-    asav_response->ec_type = ec_type;
-    asav_response->meta_data_sz = 0;
-    *resp_sz = sizeof(vs_pubkey_t) + key_sz;
+    asav_response->pubkey.key_type = VS_KEY_IOT_DEVICE;
+    asav_response->pubkey.ec_type = ec_type;
+    asav_response->pubkey.meta_data_sz = 0;
+    *resp_sz = sizeof(vs_pubkey_dated_t) + key_sz;
 
     VS_PRVS_SERVER_PROFILE_END(vs_prvs_finalize_storage);
 
@@ -417,7 +419,7 @@ _prvs_asav_process_request(const struct vs_netif_t *netif,
 
     VS_PRVS_SERVER_PROFILE_START;
 
-    vs_pubkey_t *asav_response = (vs_pubkey_t *)response;
+    vs_pubkey_dated_t *asav_response = (vs_pubkey_dated_t *)response;
     vs_status_e ret_code = vs_prvs_finalize_storage(asav_response, response_sz);
 
     VS_PRVS_SERVER_PROFILE_END(_prvs_asav_process_request);

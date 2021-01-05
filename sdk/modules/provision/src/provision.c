@@ -43,6 +43,7 @@
 #include <virgil/iot/protocols/snap/prvs/prvs-structs.h>
 #include <virgil/iot/provision/provision.h>
 #include <virgil/iot/trust_list/trust_list.h>
+#include <virgil/iot/high-level/high-level-crypto.h>
 
 static const size_t rec_key_slot[PROVISION_KEYS_QTY] = {REC1_KEY_SLOT, REC2_KEY_SLOT};
 
@@ -297,10 +298,8 @@ vs_provision_init(vs_storage_op_ctx_t *tl_storage_ctx,
     keypair_present = _own_keypair_present();
 
     // Check TrustList
-    if (keypair_present) {
-        tl_present =
-                VS_CODE_OK == vs_tl_init(tl_storage_ctx, secmodule, events_cb.tl_ver_info_cb);
-    }
+    tl_present =
+            VS_CODE_OK == vs_tl_init(tl_storage_ctx, secmodule, events_cb.tl_ver_info_cb);
 
     // Provision is ready if required elements are present
     if (keypair_present && tl_present) {
@@ -430,7 +429,7 @@ vs_provision_own_cert(vs_cert_t *cert,
 
     uint16_t key_sz = 0;
     vs_secmodule_keypair_type_e ec_type;
-    vs_pubkey_t *own_pubkey;
+    vs_pubkey_dated_t *own_pubkey;
     uint16_t sign_sz = 0;
     vs_status_e ret_code;
     uint16_t buffer_rest;
@@ -442,23 +441,29 @@ vs_provision_own_cert(vs_cert_t *cert,
     VS_IOT_ASSERT(_secmodule->slot_load);
 
     // Fill own public key
-    own_pubkey = (vs_pubkey_t *)cert->raw_cert;
+    // TODO: Use vs_pubkey_dated_t !!!
+    own_pubkey = (vs_pubkey_dated_t *)cert->raw_cert;
     STATUS_CHECK_RET(
             _secmodule->get_pubkey(PRIVATE_KEY_SLOT,
-                                   own_pubkey->meta_and_pubkey,
+                                   own_pubkey->pubkey.meta_and_pubkey,
                                    buffer_sz,
                                    &key_sz,
                                    &ec_type),
             "Unable to load public key");
-    own_pubkey->key_type = VS_KEY_IOT_DEVICE;
-    own_pubkey->ec_type = ec_type;
-    own_pubkey->meta_data_sz = 0;
-    cert->key_sz = sizeof(vs_pubkey_t) + own_pubkey->meta_data_sz + key_sz;
+    own_pubkey->pubkey.key_type = VS_KEY_IOT_DEVICE;
+    own_pubkey->pubkey.ec_type = ec_type;
+    own_pubkey->pubkey.meta_data_sz = 0;
+    own_pubkey->start_date = 0;
+    own_pubkey->expire_date = 0;
+
+    uint16_t own_pubkey_sz;
+    STATUS_CHECK_RET(vs_crypto_hl_dated_key_size(own_pubkey, &own_pubkey_sz), "");
+    cert->key_sz = own_pubkey_sz;
 
     // Calculate left space for signature
     buffer_rest = buffer_sz - cert->key_sz;
     CHECK_NOT_ZERO_RET(buffer_rest >= sizeof(vs_sign_t), VS_CODE_ERR_TOO_SMALL_BUFFER);
-    buffer_rest -= sizeof(vs_pubkey_t);
+    buffer_rest -= sizeof(vs_pubkey_dated_t);
 
     // Load signature
     if (vs_provision_is_ready()) {

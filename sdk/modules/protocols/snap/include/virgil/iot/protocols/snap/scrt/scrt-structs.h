@@ -101,7 +101,7 @@ typedef struct __attribute__((__packed__)) {
 // --------------------------------------------------------
 typedef struct __attribute__((__packed__)) {
     uint8_t user_name[USER_NAME_SZ_MAX]; /**< New name */
-    vs_pubkey_t user_pub_key;            /**< Public key of user */
+    vs_pubkey_dated_t user_pub_key;      /**< Public key of user */
 } vs_scrt_gusr_tiny_t;
 
 // INFO: Could be sent in a plain text

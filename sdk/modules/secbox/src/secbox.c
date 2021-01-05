@@ -234,6 +234,7 @@ terminate:
 vs_status_e
 vs_secbox_load(vs_storage_element_id_t id, uint8_t *data, size_t buf_sz, size_t *data_sz) {
     vs_status_e res;
+    vs_status_e res_close;
     uint8_t type;
     vs_storage_file_t f = NULL;
     uint8_t *data_load = NULL;
@@ -267,7 +268,7 @@ vs_secbox_load(vs_storage_element_id_t id, uint8_t *data, size_t buf_sz, size_t 
             goto terminate;
         }
 
-        res = VS_CODE_ERR_FILE_WRITE;
+        res = VS_CODE_ERR_FILE_READ;
         STATUS_CHECK(_storage_ctx->impl_func.load(_storage_ctx->impl_data, f, 1, data_load, *data_sz),
                      "Can't load data from file");
         STATUS_CHECK(_secbox_verify_signature(f, type, data_load, *data_sz), "Can't verify signature");
@@ -308,7 +309,12 @@ vs_secbox_load(vs_storage_element_id_t id, uint8_t *data, size_t buf_sz, size_t 
 
 terminate:
     VS_IOT_FREE(data_load);
-    return VS_CODE_OK == _storage_ctx->impl_func.close(_storage_ctx->impl_data, f) ? VS_CODE_OK : res;
+
+    if (f) {
+        res_close = _storage_ctx->impl_func.close(_storage_ctx->impl_data, f);
+    }
+
+    return (VS_CODE_OK == res) ? res_close : res;
 }
 
 /******************************************************************************/
