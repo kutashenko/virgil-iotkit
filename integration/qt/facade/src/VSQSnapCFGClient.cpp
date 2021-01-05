@@ -59,7 +59,7 @@ VSQSnapCfgClient::onConfigResult(vs_snap_transaction_id_t id, vs_status_e res) {
 }
 
 void
-VSQSnapCfgClient::onConfigureDevice() {
+VSQSnapCfgClient::onConfigureDevice(QSharedPointer<VSQNetifBase> netif, VSQMac deviceMac) {
     qDebug() << "Configure ssid:<" << m_ssid << "> pass:<" << m_pass << ">";
 
     if (m_ssid.length() >= VS_CFG_STR_MAX) {
@@ -75,15 +75,10 @@ VSQSnapCfgClient::onConfigureDevice() {
     ::strcpy(reinterpret_cast<char *>(config.ssid), m_ssid.toStdString().c_str());
     ::strcpy(reinterpret_cast<char *>(config.pass), m_pass.toStdString().c_str());
 
-    const vs_netif_t *netif;
-    if (m_defaultNetif.isNull()) {
-        netif = vs_snap_netif_routing();
-    } else {
-        netif = m_defaultNetif->lowLevelNetif();
-    }
 
-    if (VS_CODE_OK != vs_snap_cfg_wifi_configure_device(netif,
-                                 vs_snap_broadcast_mac(),
+    vs_mac_addr_t mac = deviceMac;
+    if (VS_CODE_OK != vs_snap_cfg_wifi_configure_device(netif->lowLevelNetif(),
+                                 &mac,
                                  &config)) {
         VS_LOG_ERROR("Cannot configure device");
     }

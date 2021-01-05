@@ -423,6 +423,11 @@ vs_snap_scrt_server(vs_secmodule_impl_t *secmodule, vs_snap_scrt_server_service_
 
         // Save callbacks
         VS_IOT_MEMCPY(&_impl, &impl, sizeof(impl));
+
+        if (VS_CODE_OK != vs_users_init()) {
+            VS_LOG_ERROR("Cannot initialize users storage");
+            return NULL;
+        }
     }
 
     return &_scrt;

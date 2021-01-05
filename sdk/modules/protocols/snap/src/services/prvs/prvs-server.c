@@ -192,11 +192,8 @@ vs_prvs_finalize_storage(vs_pubkey_dated_t *asav_response, uint16_t *resp_sz) {
     VS_IOT_ASSERT(_secmodule->get_pubkey);
 
     if (!_storage_initialized) {
-        STATUS_CHECK_RET(_secmodule->slot_clean(PRIVATE_KEY_SLOT), "Unable to delete PRIVATE slot");
         STATUS_CHECK_RET(_secmodule->slot_clean(REC1_KEY_SLOT), "Unable to delete REC1_KEY slot");
         STATUS_CHECK_RET(_secmodule->slot_clean(REC2_KEY_SLOT), "Unable to delete REC2_KEY slot");
-        STATUS_CHECK_RET(_secmodule->create_keypair(PRIVATE_KEY_SLOT, VS_KEYPAIR_EC_SECP256R1),
-                         "Unable to create keypair");
     }
 
     STATUS_CHECK_RET(_secmodule->get_pubkey(

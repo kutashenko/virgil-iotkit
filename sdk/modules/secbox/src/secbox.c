@@ -284,6 +284,7 @@ vs_secbox_load(vs_storage_element_id_t id, uint8_t *data, size_t buf_sz, size_t 
 #if 0
         CHECK(buf_sz == data_load_sz, "Can't read requested data quantity");
 #endif
+        res = VS_CODE_OK;
         break;
 
     case VS_SECBOX_SIGNED:

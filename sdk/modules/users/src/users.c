@@ -26,6 +26,7 @@
 #include <virgil/iot/macros/macros.h>
 #include <virgil/iot/provision/provision.h>
 #include <virgil/iot/high-level/high-level-crypto.h>
+#include <virgil/iot/secmodule/secmodule-helpers.h>
 #include <stdlib-config.h>
 #include <global-hal.h>
 
@@ -205,7 +206,8 @@ _find_by_key(vs_user_type_t type, const vs_pubkey_dated_t *pubkey, uint16_t *pos
 
             raw_key_1 = (uint8_t *)&pubkey->pubkey.meta_and_pubkey[pubkey->pubkey.meta_data_sz];
             raw_key_2 = (uint8_t *)&read_pubkey->pubkey.meta_and_pubkey[read_pubkey->pubkey.meta_data_sz];
-            if (0 == VS_IOT_MEMCPY(raw_key_1, raw_key_2, USER_NAME_SZ_MAX)) {
+            size_t key_sz = vs_secmodule_get_pubkey_len(pubkey->pubkey.ec_type);
+            if (0 == VS_IOT_MEMCMP(raw_key_1, raw_key_2, key_sz)) {
                 *pos = i;
                 return VS_CODE_OK;
             }
