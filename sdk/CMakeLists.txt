@@ -49,7 +49,6 @@ include(GNUInstallDirs)
 
 if (ANDROID_QT OR APPLE_PLATFORM)
     set(MOBILE_PLATFORM ON)
-    set(VIRGIL_IOT_DEFAULT_IMPL OFF)
 endif()
 
 # ---------------------------------------------------------------------------
@@ -143,8 +142,8 @@ option(VIRGIL_IOT_DEFAULT_CRYPTO_VS_SOFT_SECMODULE "Enable default Virgil crypto
 #
 # Default cloud implementations
 #
-option(VIRGIL_IOT_DEFAULT_CLOUD_CURL_HTTP "Enable default curl http implementation" ON)
-option(VIRGIL_IOT_DEFAULT_CLOUD_MESSAGE_BIN_AWS "Enable default message bin aws implementation" ON)
+option(VIRGIL_IOT_DEFAULT_CLOUD_CURL_HTTP "Enable default curl http implementation" OFF)
+option(VIRGIL_IOT_DEFAULT_CLOUD_MESSAGE_BIN_AWS "Enable default message bin aws implementation" OFF)
 
 # ---------------------------------------------------------------------------
 #   Dependencies / thirdparty libraries
