@@ -204,6 +204,7 @@ vs_snap_scrt_get_users(const vs_netif_t *netif,
                        vs_user_type_t user_type,
                        uint8_t offset,
                        uint8_t max_amount) {
+#if 0
     vs_status_e ret_code;
     vs_scrt_gusr_request_t get_users_request;
 
@@ -221,7 +222,7 @@ vs_snap_scrt_get_users(const vs_netif_t *netif,
                                           (uint8_t *)&get_users_request,
                                           sizeof(vs_scrt_gusr_request_t)),
                      "Cannot send request");
-
+#endif
     return VS_CODE_OK;
 }
 
