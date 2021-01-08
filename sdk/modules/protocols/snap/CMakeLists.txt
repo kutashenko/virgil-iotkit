@@ -169,7 +169,6 @@ endfunction()
 #
 add_snap("vs-module-snap-factory" 1 "PRVS_CLIENT=1 INFO_CLIENT=1 CFG_CLIENT=1")
 
-if (NOT MOBILE_PLATFORM)
 
     #
     #   SNAP Devices initializer
@@ -185,7 +184,6 @@ if (NOT MOBILE_PLATFORM)
     #   SNAP For Gateway
     #
     add_snap("vs-module-snap-gateway" 1 "FLDT_SERVER=1 INFO_SERVER=1 CFG_SERVER=1 MSGR_CLIENT=1 SCRT_SERVER=1")
-endif()
 
 #
 #   SNAP For Control

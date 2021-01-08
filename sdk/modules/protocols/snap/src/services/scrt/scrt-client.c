@@ -271,7 +271,8 @@ _scrt_service_response_processor(const struct vs_netif_t *netif,
         }
         break;
 
-    default: {}
+    default: {
+    }
     }
 
     return VS_CODE_OK;
