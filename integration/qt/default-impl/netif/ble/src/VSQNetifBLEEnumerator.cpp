@@ -65,6 +65,10 @@ VSQNetifBLEEnumerator::onDeviceDiscovered(const QBluetoothDeviceInfo &deviceInfo
 
         const auto _idx = createIndex(_pos, 0);
         emit dataChanged(_idx, _idx);
+
+        if (deviceInfo.rssi() && deviceInfo.rssi() > 40) {
+            emit fireDeviceIsClose(deviceInfo.name(), true);
+        }
     }
 }
 

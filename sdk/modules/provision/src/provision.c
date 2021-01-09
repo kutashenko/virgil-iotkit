@@ -54,6 +54,8 @@ static const size_t tl_key_slot[PROVISION_KEYS_QTY] = {TL1_KEY_SLOT, TL2_KEY_SLO
 static const size_t fw_key_slot[PROVISION_KEYS_QTY] = {FW1_KEY_SLOT, FW2_KEY_SLOT};
 
 static vs_secmodule_impl_t *_secmodule = NULL;
+static vs_storage_op_ctx_t *_tl_storage_ctx = NULL;
+static vs_provision_events_t _events_cb = {0};
 
 static char *_base_url = NULL;
 
@@ -293,6 +295,8 @@ vs_provision_init(vs_storage_op_ctx_t *tl_storage_ctx,
     CHECK_NOT_ZERO_RET(secmodule, VS_CODE_ERR_NULLPTR_ARGUMENT);
     CHECK_NOT_ZERO_RET(secmodule->slot_load, VS_CODE_ERR_NULLPTR_ARGUMENT);
     _secmodule = secmodule;
+    _tl_storage_ctx = tl_storage_ctx;
+    _events_cb = events_cb;
 
     // Check own KeyPair
     keypair_present = _own_keypair_present();
@@ -316,6 +320,14 @@ vs_provision_init(vs_storage_op_ctx_t *tl_storage_ctx,
     // Inform about absent provision
     VS_LOG_DEBUG("Provision is absent");
     return VS_CODE_ERR_PROVISION_NOT_READY;
+}
+
+/******************************************************************************/
+vs_status_e
+vs_provision_update(void) {
+    return vs_provision_init(_tl_storage_ctx,
+                             _secmodule,
+                             _events_cb);
 }
 
 /******************************************************************************/

@@ -119,6 +119,9 @@ extern "C" {
 vs_status_e
 vs_provision_init(vs_storage_op_ctx_t *tl_storage_ctx, vs_secmodule_impl_t *secmodule, vs_provision_events_t events_cb);
 
+vs_status_e
+vs_provision_update(void);
+
 bool
 vs_provision_is_ready(void);
 

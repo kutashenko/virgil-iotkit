@@ -112,6 +112,9 @@ signals:
      */
     void fireDiscoveryFinished();
 
+    void
+    fireDeviceIsClose(QString deviceName, bool requiresProvision);
+
 private slots:
 
     /**
