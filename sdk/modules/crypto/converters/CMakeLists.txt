@@ -60,6 +60,10 @@ add_library(converters
         SHARED
         )
 
+if(ANDROID)
+    set_target_properties(converters PROPERTIES SUFFIX "-${ANDROID_ABI}.so")
+endif()
+
 target_sources(converters
         PRIVATE
         # Headers
