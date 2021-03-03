@@ -79,6 +79,7 @@ extern "C" {
 vs_status_e
 vs_snap_init(vs_netif_t *default_netif,
              vs_netif_process_cb_t packet_preprocessor_cb,
+             vs_netif_need_enc_cb_t need_enc_cb,
              const vs_device_manufacture_id_t manufacturer_id,
              const vs_device_type_t device_type,
              const vs_device_serial_t device_serial,

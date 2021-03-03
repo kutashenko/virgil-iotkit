@@ -38,6 +38,7 @@
 #include <virgil/iot/macros/macros.h>
 #include <private/snap-private.h>
 #include <virgil/iot/protocols/snap/generated/snap_cvt.h>
+#include <virgil/iot/session/session.h>
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -64,6 +65,7 @@ static uint32_t _device_roles = 0; // See vs_snap_device_role_e
 static char _device_name[DEVICE_NAME_SZ_MAX] = {0};
 
 static vs_netif_process_cb_t _preprocessor_cb = NULL;
+static vs_netif_need_enc_cb_t _need_enc_cb = NULL;
 
 #define VS_SNAP_PROFILE 0
 
@@ -115,13 +117,99 @@ _accept_packet(const vs_netif_t *netif, const vs_mac_addr_t *src_mac, const vs_m
 
 /******************************************************************************/
 static vs_status_e
+_packet_encrypt(vs_snap_packet_t *packet) {
+    vs_status_e ret_code;
+    size_t new_sz;
+    vs_session_id_t session_id;
+
+    // Check input parameters
+    CHECK_NOT_ZERO_RET(packet, VS_CODE_ERR_NULLPTR_ARGUMENT);
+
+    // Check if already encrypted
+    if (packet->header.flags & VS_SNAP_FLAG_ENCYPTED) {
+        VS_LOG_DEBUG("Packet already encrypted");
+        return VS_CODE_OK;
+    }
+
+    // Prepare session ID
+#if SCRT_SERVER
+    vs_mac_addr_t mac;
+    STATUS_CHECK_RET(vs_snap_mac_addr(0, &mac), "");
+    VS_IOT_MEMCPY(session_id.prefix, mac.bytes, SESSION_ID_PREFIX_SZ);
+#else
+    VS_IOT_MEMCPY(session_id.prefix, packet->eth_header.dest.bytes, SESSION_ID_PREFIX_SZ);
+#endif
+    session_id.crc16 = 0;
+
+    // Encrypt packet
+    //      TODO: Pay attention to buffer size,
+    //            because encrypted data is bigged than non-encrypted
+    STATUS_CHECK_RET(vs_session_encrypt(&session_id, packet->content, packet->header.content_size, &new_sz), "");
+
+    // Fill info about encrypted packet
+    packet->header.flags |= VS_SNAP_FLAG_ENCYPTED;
+    packet->header.content_size = new_sz;
+
+    return VS_CODE_OK;
+}
+
+/******************************************************************************/
+static vs_status_e
+_packet_decrypt(vs_snap_packet_t *packet) {
+    vs_status_e ret_code;
+    size_t new_sz;
+    vs_session_id_t session_id;
+
+    // Check input parameters
+    CHECK_NOT_ZERO_RET(packet, VS_CODE_ERR_NULLPTR_ARGUMENT);
+
+    // Check if encrypted
+    if (!(packet->header.flags & VS_SNAP_FLAG_ENCYPTED)) {
+        VS_LOG_DEBUG("Packet is not encrypted");
+        return VS_CODE_OK;
+    }
+
+    // Prepare session ID
+#if SCRT_SERVER
+    vs_mac_addr_t mac;
+    STATUS_CHECK_RET(vs_snap_mac_addr(0, &mac), "");
+    VS_IOT_MEMCPY(session_id.prefix, mac.bytes, SESSION_ID_PREFIX_SZ);
+#else
+    VS_IOT_MEMCPY(session_id.prefix, packet->eth_header.src.bytes, SESSION_ID_PREFIX_SZ);
+#endif
+    session_id.crc16 = 0;
+
+    // Decrypt packet
+    STATUS_CHECK_RET(vs_session_decrypt(&session_id, packet->content, packet->header.content_size, &new_sz), "");
+
+    // Fill info about decrypted packet
+    packet->header.flags &= ~VS_SNAP_FLAG_ENCYPTED;
+    packet->header.content_size = new_sz;
+
+    return VS_CODE_OK;
+}
+
+/******************************************************************************/
+static vs_status_e
 _process_packet(const vs_netif_t *netif, vs_snap_packet_t *packet) {
+    vs_status_e ret_code;
     uint32_t i;
     uint8_t response[RESPONSE_SZ_MAX + RESPONSE_RESERVED_SZ];
     uint16_t response_sz = 0;
     int res;
     vs_snap_packet_t *response_packet = (vs_snap_packet_t *)response;
     bool need_response = false;
+
+
+    CHECK_NOT_ZERO_RET(_need_enc_cb, VS_CODE_ERR_NOT_FOUND);
+    if (_need_enc_cb(packet->header.service_id, packet->header.element_id)) {
+        if (!(packet->header.flags & VS_SNAP_FLAG_ENCYPTED)) {
+            VS_LOG_WARNING("Command must be encrypted.");
+            return VS_CODE_ERR_UNSUPPORTED;
+        }
+        VS_LOG_DEBUG("Decrypt packet ...");
+        STATUS_CHECK_RET(_packet_decrypt(packet), "Cannot decrypt packet");
+    }
 
     VS_IOT_MEMSET(response, 0, sizeof(response));
 
@@ -355,6 +443,7 @@ vs_snap_default_processor(vs_netif_t *netif, const uint8_t *data, const uint16_t
 vs_status_e
 vs_snap_init(vs_netif_t *default_netif,
              vs_netif_process_cb_t packet_preprocessor_cb,
+             vs_netif_need_enc_cb_t need_enc_cb,
              const vs_device_manufacture_id_t manufacturer_id,
              const vs_device_type_t device_type,
              const vs_device_serial_t device_serial,
@@ -364,6 +453,7 @@ vs_snap_init(vs_netif_t *default_netif,
     VS_IOT_ASSERT(default_netif);
     VS_IOT_ASSERT(default_netif->init);
     VS_IOT_ASSERT(default_netif->tx);
+    VS_IOT_ASSERT(need_enc_cb);
 
     // Save device parameters
     VS_IOT_MEMCPY(_manufacture_id, manufacturer_id, sizeof(_manufacture_id));
@@ -384,6 +474,7 @@ vs_snap_init(vs_netif_t *default_netif,
         _preprocessor_cb = vs_snap_default_processor;
     }
     _device_roles = device_roles;
+    _need_enc_cb = need_enc_cb;
 
     // Save default network interface
     return vs_snap_netif_add(default_netif);
@@ -470,14 +561,25 @@ vs_snap_netif_routing(void) {
 /******************************************************************************/
 vs_status_e
 vs_snap_send(const vs_netif_t *netif, const uint8_t *data, uint16_t data_sz) {
+    vs_status_e ret_code;
     size_t i;
+    uint16_t fixed_data_sz = data_sz;
 
     VS_IOT_ASSERT(_default_netif());
     VS_IOT_ASSERT(netif);
 
     vs_snap_packet_t *packet = (vs_snap_packet_t *)data;
 
-    if (data_sz < sizeof(vs_snap_packet_t)) {
+    CHECK_NOT_ZERO_RET(_need_enc_cb, VS_CODE_ERR_NOT_FOUND);
+    if (!(packet->header.flags & VS_SNAP_FLAG_ENCYPTED)) {
+        if (_need_enc_cb(packet->header.service_id, packet->header.element_id)) {
+            VS_LOG_DEBUG("Encrypt packet ...");
+            STATUS_CHECK_RET(_packet_encrypt(packet), "Cannot encrypt message");
+            fixed_data_sz = sizeof(vs_snap_packet_t) + packet->header.content_size;
+        }
+    }
+
+    if (fixed_data_sz < sizeof(vs_snap_packet_t)) {
         return VS_CODE_ERR_INCORRECT_ARGUMENT;
     }
 
@@ -491,7 +593,7 @@ vs_snap_send(const vs_netif_t *netif, const uint8_t *data, uint16_t data_sz) {
         for (i = 0; i < _netifs_cnt; i++) {
             if (_netifs[i]) {
                 _snap_set_src_mac(_netifs[i], (vs_snap_packet_t *)data);
-                _netifs[i]->tx(_netifs[i], data, data_sz);
+                _netifs[i]->tx(_netifs[i], data, fixed_data_sz);
             }
         }
 
@@ -500,7 +602,7 @@ vs_snap_send(const vs_netif_t *netif, const uint8_t *data, uint16_t data_sz) {
 
     // Send message to certain network interface
     _snap_set_src_mac(netif, (vs_snap_packet_t *)data);
-    return netif->tx((vs_netif_t *)netif, data, data_sz);
+    return netif->tx((vs_netif_t *)netif, data, fixed_data_sz);
 }
 
 /******************************************************************************/
@@ -627,7 +729,7 @@ vs_snap_send_request(const vs_netif_t *netif,
                      const uint8_t *data,
                      uint16_t data_sz) {
 
-    uint8_t buffer[sizeof(vs_snap_packet_t) + data_sz];
+    uint8_t buffer[RESPONSE_SZ_MAX];
     vs_snap_packet_t *packet;
 
     VS_IOT_MEMSET(buffer, 0, sizeof(buffer));
@@ -657,7 +759,7 @@ vs_snap_send_response(const vs_netif_t *netif,
                       bool is_ack,
                       const uint8_t *data,
                       uint16_t data_sz) {
-    uint8_t buffer[sizeof(vs_snap_packet_t) + data_sz];
+    uint8_t buffer[RESPONSE_SZ_MAX];
     vs_snap_packet_t *packet;
 
     VS_IOT_MEMSET(buffer, 0, sizeof(buffer));

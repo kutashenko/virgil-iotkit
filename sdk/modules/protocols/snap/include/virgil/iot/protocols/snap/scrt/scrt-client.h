@@ -48,13 +48,23 @@ extern "C" {
 #define VS_SCRT_CLIENT_REQUEST_MAX_SZ (768)
 
 
-typedef vs_status_e (*vs_snap_scrt_client_info_cb_t)(vs_snap_transaction_id_t id,
+typedef vs_status_e (*vs_snap_scrt_client_info_cb_t)(vs_mac_addr_t mac,
+                                                     vs_snap_transaction_id_t id,
                                                      vs_status_e res,
                                                      const vs_scrt_info_response_t *scrt_info);
-typedef vs_status_e (*vs_snap_scrt_client_session_key_cb_t)(vs_snap_transaction_id_t id, vs_status_e res);
-typedef vs_status_e (*vs_snap_scrt_client_add_user_cb_t)(vs_snap_transaction_id_t id, vs_status_e res);
-typedef vs_status_e (*vs_snap_scrt_client_remove_user_cb_t)(vs_snap_transaction_id_t id, vs_status_e res);
-typedef vs_status_e (*vs_snap_scrt_client_get_users_cb_t)(vs_snap_transaction_id_t id, vs_status_e res);
+typedef vs_status_e (*vs_snap_scrt_client_session_key_cb_t)(vs_mac_addr_t mac,
+                                                            vs_snap_transaction_id_t id,
+                                                            vs_status_e res,
+                                                            const vs_session_key_t *key);
+typedef vs_status_e (*vs_snap_scrt_client_add_user_cb_t)(vs_mac_addr_t mac,
+                                                         vs_snap_transaction_id_t id,
+                                                         vs_status_e res);
+typedef vs_status_e (*vs_snap_scrt_client_remove_user_cb_t)(vs_mac_addr_t mac,
+                                                            vs_snap_transaction_id_t id,
+                                                            vs_status_e res);
+typedef vs_status_e (*vs_snap_scrt_client_get_users_cb_t)(vs_mac_addr_t mac,
+                                                          vs_snap_transaction_id_t id,
+                                                          vs_status_e res);
 
 /** SCRT client implementation */
 typedef struct {

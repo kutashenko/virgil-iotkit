@@ -51,6 +51,7 @@ target_link_libraries(vs-module-crypto-session
         PUBLIC
         macros
         virgil-iot-status-code
+        vs-module-secmodule
         )
 #
 #   Common include directories

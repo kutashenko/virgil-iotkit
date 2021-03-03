@@ -41,6 +41,7 @@ typedef struct __attribute__((__packed__)) {
 } vs_session_id_t;
 
 typedef struct __attribute__((__packed__)) {
+    bool ready;
     vs_session_id_t id;
     uint8_t val[SESSION_KEY_SZ];
 } vs_session_key_t;

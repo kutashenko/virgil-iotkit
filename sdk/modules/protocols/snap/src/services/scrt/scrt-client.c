@@ -42,6 +42,7 @@
 #include <virgil/iot/macros/macros.h>
 #include <virgil/iot/protocols/snap.h>
 #include <virgil/iot/logger/logger.h>
+#include <virgil/iot/session/session.h>
 #include <virgil/iot/high-level/high-level-crypto.h>
 #include <stdlib-config.h>
 #include <global-hal.h>
@@ -228,6 +229,53 @@ vs_snap_scrt_get_users(const vs_netif_t *netif,
 
 /******************************************************************************/
 static vs_status_e
+_session_key_processing(const struct vs_netif_t *netif,
+                        const vs_ethernet_header_t *eth_header,
+                        vs_snap_element_t element_id,
+                        bool is_ack,
+                        const uint8_t *response,
+                        const uint16_t response_sz) {
+    vs_status_e ret_code = VS_CODE_ERR_CRYPTO;
+    vs_session_key_t *key = NULL;
+    vs_snap_transaction_id_t id = 0;
+
+    // Do not process data, because of error
+    CHECK_NOT_ZERO(is_ack);
+
+    // Process received data
+    CHECK_NOT_ZERO(response);
+    CHECK_NOT_ZERO(response_sz > sizeof(vs_scrt_gsek_response_t));
+    vs_scrt_gsek_response_t *key_response = (vs_scrt_gsek_response_t *)response;
+
+    // Verify request
+    const vs_cert_t *sender_cert = (vs_cert_t *)key_response->device_cert_and_sign;
+    uint16_t sender_cert_sz;
+    STATUS_CHECK(vs_crypto_hl_cert_size(sender_cert, &sender_cert_sz), "Cannot get size of cert");
+    const uint8_t *signed_data = response;
+    const size_t signed_data_sz = sizeof(vs_scrt_gsek_response_t) + sender_cert_sz;
+    const vs_sign_t *response_sign = (vs_sign_t *)&key_response->device_cert_and_sign[sender_cert_sz];
+    const vs_pubkey_dated_t *request_required_signer = (vs_pubkey_dated_t *)sender_cert->raw_cert;
+    STATUS_CHECK(vs_crypto_hl_verify(_secmodule, signed_data, signed_data_sz, response_sign, request_required_signer),
+                 "Cannot verify response");
+
+    // Check NONCE
+
+    // Save Session Key
+    STATUS_CHECK(vs_session_add_key(&key_response->session_key), "Cannot save session key");
+
+    key = &key_response->session_key;
+    ret_code = VS_CODE_OK;
+
+terminate:
+    // Callback to inform upper level
+    if (_scrt_impl.scrt_client_session_key_cb) {
+        _scrt_impl.scrt_client_session_key_cb(eth_header->src, id, ret_code, key);
+    }
+
+    return ret_code;
+}
+/******************************************************************************/
+static vs_status_e
 _scrt_service_response_processor(const struct vs_netif_t *netif,
                                  const vs_ethernet_header_t *eth_header,
                                  vs_snap_element_t element_id,
@@ -243,31 +291,29 @@ _scrt_service_response_processor(const struct vs_netif_t *netif,
         CHECK_NOT_ZERO_RET(response_sz > sizeof(vs_scrt_info_response_t), VS_CODE_ERR_TOO_SMALL_BUFFER);
         if (_scrt_impl.scrt_client_info_cb) {
             const vs_scrt_info_response_t *scrt_info = (vs_scrt_info_response_t *)response;
-            _scrt_impl.scrt_client_info_cb(id, res, scrt_info);
+            _scrt_impl.scrt_client_info_cb(eth_header->src, id, res, scrt_info);
         }
         break;
 
     case VS_SCRT_GSEK:
-        if (_scrt_impl.scrt_client_session_key_cb) {
-            _scrt_impl.scrt_client_session_key_cb(id, res);
-        }
+        _session_key_processing(netif, eth_header, element_id, is_ack, response, response_sz);
         break;
 
     case VS_SCRT_AUSR:
         if (_scrt_impl.scrt_client_add_user_cb) {
-            _scrt_impl.scrt_client_add_user_cb(id, res);
+            _scrt_impl.scrt_client_add_user_cb(eth_header->src, id, res);
         }
         break;
 
     case VS_SCRT_RUSR:
         if (_scrt_impl.scrt_client_remove_user_cb) {
-            _scrt_impl.scrt_client_remove_user_cb(id, res);
+            _scrt_impl.scrt_client_remove_user_cb(eth_header->src, id, res);
         }
         break;
 
     case VS_SCRT_GUSR:
         if (_scrt_impl.scrt_client_get_users_cb) {
-            _scrt_impl.scrt_client_get_users_cb(id, res);
+            _scrt_impl.scrt_client_get_users_cb(eth_header->src, id, res);
         }
         break;
 

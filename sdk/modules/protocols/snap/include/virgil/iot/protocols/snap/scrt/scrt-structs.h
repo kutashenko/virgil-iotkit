@@ -64,7 +64,7 @@ typedef struct __attribute__((__packed__)) {
 // INFO: Must be encrypted asymmetrically
 typedef struct __attribute__((__packed__)) {
     uint8_t nonce[SCRT_NONCE_SZ]; /**< nonce to protect against reply attacks */
-    uint8_t user_cert_and_sign[]; /**< vs_provision_cert_t and data signature*/
+    uint8_t user_cert_and_sign[]; /**< vs_cert_t and data signature*/
 } vs_scrt_gsek_request_t;
 
 // INFO: Must be encrypted asymmetrically

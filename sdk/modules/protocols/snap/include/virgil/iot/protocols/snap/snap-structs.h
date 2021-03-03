@@ -125,6 +125,7 @@ typedef vs_status_e (*vs_netif_rx_cb_t)(struct vs_netif_t *netif,
  * \return #VS_CODE_OK in case of success or error code.
  */
 typedef vs_status_e (*vs_netif_process_cb_t)(struct vs_netif_t *netif, const uint8_t *data, const uint16_t data_sz);
+typedef bool (*vs_netif_need_enc_cb_t)(vs_snap_service_id_t service_id, vs_snap_element_t element_id);
 
 /** Send data
  *
@@ -262,8 +263,9 @@ typedef enum {
 
 /** SNAP Flags */
 typedef enum {
-    VS_SNAP_FLAG_ACK = HTONL_IN_COMPILE_TIME(0x0001), /**< Confirmation about receiving a correct packet */
-    VS_SNAP_FLAG_NACK = HTONL_IN_COMPILE_TIME(0x0002) /**< Notification about rejecting a packet */
+    VS_SNAP_FLAG_ACK = HTONL_IN_COMPILE_TIME(0x0001),     /**< Confirmation about receiving a correct packet */
+    VS_SNAP_FLAG_NACK = HTONL_IN_COMPILE_TIME(0x0002),    /**< Notification about rejecting a packet */
+    VS_SNAP_FLAG_ENCYPTED = HTONL_IN_COMPILE_TIME(0x8000) /**< Encrypted packet */
 } vs_snap_flags_e;
 
 /** SNAP Version */

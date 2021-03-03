@@ -131,7 +131,7 @@ _scrt_get_session_key_request_processor(const uint8_t *request,
     uint16_t request_owner_cert_sz;
     STATUS_CHECK_RET(vs_crypto_hl_cert_size(request_owner_cert, &request_owner_cert_sz), "Cannot get size of cert");
     const uint8_t *request_signed_data = request;
-    const size_t request_signed_data_sz = sizeof(vs_scrt_gsek_response_t) + request_owner_cert_sz;
+    const size_t request_signed_data_sz = sizeof(vs_scrt_gsek_request_t) + request_owner_cert_sz;
     const vs_sign_t *request_sign = (vs_sign_t *)&get_session_key_request->user_cert_and_sign[request_owner_cert_sz];
     const vs_pubkey_dated_t *request_required_signer = (vs_pubkey_dated_t *)request_owner_cert->raw_cert;
     STATUS_CHECK_RET(
