@@ -63,6 +63,13 @@ static vs_poll_ctx_t _poll_ctx = {0, 0, 0, {{0, 0, 0, 0, 0, 0}}};
 
 static vs_file_version_t _firmware_ver = {0, 0, 0, 0, 0};
 static vs_file_version_t _tl_ver = {0, 0, 0, 0, 0};
+static bool _need_connection_cred = true;
+
+/******************************************************************/
+void
+vs_snap_info_set_need_cred(bool need_cred) {
+    _need_connection_cred = need_cred;
+}
 
 /******************************************************************/
 static vs_status_e
@@ -194,7 +201,7 @@ _fill_ginf_data(vs_info_ginf_response_t *general_info) {
     general_info->protocol_version = 1;
     STATUS_CHECK_RET(vs_users_get_amount(VS_USER_OWNER, &owners_amount), "Cannot get owners amount");
     general_info->has_owner = owners_amount > 0;
-    general_info->need_connection_creds = 1;
+    general_info->need_connection_creds = _need_connection_cred ? 1 : 0;
 
     // Normalize byte order
     vs_info_ginf_response_t_encode(general_info);

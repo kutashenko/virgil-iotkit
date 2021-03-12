@@ -121,6 +121,9 @@ vs_snap_info_set_firmware_ver(vs_file_version_t ver);
 void
 vs_snap_info_set_tl_ver(vs_file_version_t ver);
 
+void
+vs_snap_info_set_need_cred(bool need_cred);
+
 #ifdef __cplusplus
 } // extern "C"
 } // namespace VirgilIoTKit
