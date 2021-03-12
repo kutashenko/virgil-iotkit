@@ -483,6 +483,7 @@ vs_snap_init(vs_netif_t *default_netif,
 /******************************************************************************/
 void
 vs_snap_packet_dump(const char *title, const vs_snap_packet_t *packet) {
+#if 0
     if (!packet) {
         return;
     }
@@ -501,6 +502,7 @@ vs_snap_packet_dump(const char *title, const vs_snap_packet_t *packet) {
                  pe[2],
                  pe[3],
                  (unsigned int)packet->header.transaction_id);
+#endif
 }
 
 /******************************************************************************/
