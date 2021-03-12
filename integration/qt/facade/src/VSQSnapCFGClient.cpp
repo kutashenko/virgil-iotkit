@@ -62,12 +62,24 @@ void
 VSQSnapCfgClient::onConfigureDevice(QSharedPointer<VSQNetifBase> netif, VSQMac deviceMac) {
     qDebug() << "Configure ssid:<" << m_ssid << "> pass:<" << m_pass << ">";
 
+    if (!m_ssid.length()) {
+        VS_LOG_ERROR("SSID string is empty");
+        return;
+    }
+
     if (m_ssid.length() >= VS_CFG_STR_MAX) {
         VS_LOG_ERROR("SSID string is longer than %d", VS_CFG_STR_MAX);
+        return;
+    }
+
+    if (!m_pass.length()) {
+        VS_LOG_ERROR("Password string is empty");
+        return;
     }
 
     if (m_pass.length() >= VS_CFG_STR_MAX) {
         VS_LOG_ERROR("Password string is longer than %d", VS_CFG_STR_MAX);
+        return;
     }
 
     vs_cfg_wifi_configuration_t config;
