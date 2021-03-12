@@ -47,27 +47,34 @@ VSQNetifBLEEnumerator::onDeviceDiscovered(const QBluetoothDeviceInfo &deviceInfo
 #if BLE_ENUM_DEBUG
         qDebug() << "[VIRGIL] Device Discovered : " << deviceInfo.name() << " : " << deviceInfo.deviceUuid();
 #endif
-        const bool _isInsert = !m_devices.keys().contains(deviceInfo.name()) /*&& m_devices.count()*/;
+        static const QString kPrefix = "yiot_";
+        if (!deviceInfo.name().startsWith(kPrefix)) {
+            return;
+        }
+
+        QString name = deviceInfo.name();//.remove(kPrefix);
+
+        const bool _isInsert = !m_devices.keys().contains(name) /*&& m_devices.count()*/;
 
         if (_isInsert) {
             // TODO: Fix it
             auto tmp = m_devices;
-            tmp[deviceInfo.name()] = BLEDevInfo();
-            const int _pos = tmp.keys().indexOf(deviceInfo.name());
+            tmp[name] = BLEDevInfo();
+            const int _pos = tmp.keys().indexOf(name);
             beginInsertRows(QModelIndex(), _pos, _pos);
-            m_devices[deviceInfo.name()] = BLEDevInfo(deviceInfo, QDateTime::currentDateTime());
+            m_devices[name] = BLEDevInfo(deviceInfo, QDateTime::currentDateTime());
             endInsertRows();
         } else {
-            m_devices[deviceInfo.name()] = BLEDevInfo(deviceInfo, QDateTime::currentDateTime());
+            m_devices[name] = BLEDevInfo(deviceInfo, QDateTime::currentDateTime());
         }
 
-        const int _pos = m_devices.keys().indexOf(deviceInfo.name());
+        const int _pos = m_devices.keys().indexOf(name);
 
         const auto _idx = createIndex(_pos, 0);
         emit dataChanged(_idx, _idx);
 
         if (deviceInfo.rssi() && deviceInfo.rssi() > 40) {
-            emit fireDeviceIsClose(deviceInfo.name(), true);
+            emit fireDeviceIsClose(name, true);
         }
     }
 }
