@@ -44,6 +44,7 @@ const size_t VSQNetifBLE::_sendSizeLimit(20);
 VSQNetifBLE::VSQNetifBLE() : m_canCommunicate(false),
     m_leController(QSharedPointer <QLowEnergyController> (nullptr)),
     m_leService(QSharedPointer <QLowEnergyService> (nullptr)) {
+    connect(this, SIGNAL(fireTxTask(const QByteArray)), SLOT(internalTx(const QByteArray)), Qt::QueuedConnection);
 }
 
 //******************************************************************************
@@ -62,23 +63,23 @@ VSQNetifBLE::deinit() {
 }
 
 //******************************************************************************
-bool
-VSQNetifBLE::tx(const QByteArray &data) {
-    if (!isActive()) return false;
+void
+VSQNetifBLE::internalTx(const QByteArray data) {
+    if (!isActive()) return;
 
     qDebug() << "Send data lenght : " << data.size();
 
     QLowEnergyCharacteristic writeCharacteristic;
-    foreach (const QLowEnergyCharacteristic &ch, m_leService->characteristics()) {
-        if (QBluetoothUuid(_serviceUuidTx) == ch.uuid()) {
-            writeCharacteristic = ch;
-            break;
+            foreach (const QLowEnergyCharacteristic &ch, m_leService->characteristics()) {
+            if (QBluetoothUuid(_serviceUuidTx) == ch.uuid()) {
+                writeCharacteristic = ch;
+                break;
+            }
         }
-    }
 
     if (!writeCharacteristic.isValid()) {
         VS_LOG_ERROR("Write characteristic is invalid");
-        return false;
+        return;
     }
 
     int sendPos = 0;
@@ -101,11 +102,16 @@ VSQNetifBLE::tx(const QByteArray &data) {
         sendPos += dataPart.size() - 1;
         m_leService->writeCharacteristic(writeCharacteristic,
                                          dataPart
-                                         );
+        );
         qDebug() << "> " << dataPart.toHex();
-     }
+    }
+}
 
-     return true;
+//******************************************************************************
+bool
+VSQNetifBLE::tx(const QByteArray &data) {
+    emit fireTxTask(data);
+    return true;
 }
 
 //******************************************************************************

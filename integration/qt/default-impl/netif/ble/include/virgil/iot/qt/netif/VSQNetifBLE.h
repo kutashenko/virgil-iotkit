@@ -73,6 +73,7 @@ signals:
     void fireDeviceReady(bool);
     void fireDeviceDisconnected();
     void fireDeviceError();
+    void fireTxTask(const QByteArray data);
 
 protected:
     bool
@@ -126,6 +127,9 @@ private slots:
      * @param[in] serviceState - current state of service
      */
     void onServiceDetailsDiscovered(QLowEnergyService::ServiceState serviceState);
+
+    void
+    internalTx(const QByteArray data);
 
 private:
     VSQMac m_mac;
