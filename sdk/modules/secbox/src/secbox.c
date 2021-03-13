@@ -246,7 +246,7 @@ vs_secbox_load(vs_storage_element_id_t id, uint8_t *data, size_t buf_sz, size_t 
 
     ssize_t file_sz = _storage_ctx->impl_func.size(_storage_ctx->impl_data, id);
 
-    CHECK_RET(0 < file_sz, VS_CODE_ERR_FILE, "Can't find file");
+    CHECK_RET(0 < file_sz, VS_CODE_ERR_FILE, NULL);
     CHECK_RET(file_sz > sign_sz + 1, VS_CODE_ERR_FILE, "File format error");
 
     CHECK_RET(f = _storage_ctx->impl_func.open(_storage_ctx->impl_data, id), VS_CODE_ERR_FILE, "Can't open file");

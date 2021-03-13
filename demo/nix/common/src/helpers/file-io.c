@@ -162,7 +162,9 @@ vs_files_get_len(const char *folder, const char *file_name) {
             goto terminate;
         }
     } else {
+#if 0
         VS_LOG_WARNING("Unable to open file %s. errno = %d (%s)", file_path, errno, strerror(errno));
+#endif
     }
 
 terminate:

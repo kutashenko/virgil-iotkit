@@ -87,12 +87,13 @@
  *  \param[in] CONDITION Operation to be checked.
  *  \param[in] MESSAGE String with printf-like parameter to be logged in case of non-successful operation.
  */
-#define CHECK(CONDITION, MESSAGE, ...) do {                                                                   \
-    if (!(CONDITION)) {                                                                                                \
-        VS_LOG_ERROR((MESSAGE), ##__VA_ARGS__);                                                                        \
-        goto terminate;                                                                                             \
-    } \
-    } while(0)
+#define CHECK(CONDITION, MESSAGE, ...)                                                                                 \
+    do {                                                                                                               \
+        if (!(CONDITION)) {                                                                                            \
+            VS_LOG_ERROR((MESSAGE), ##__VA_ARGS__);                                                                    \
+            goto terminate;                                                                                            \
+        }                                                                                                              \
+    } while (0)
 
 /** Check condition and return \a RETCODE if non-successful.
  *
@@ -105,12 +106,15 @@
  *
  *  \return \a RETCODE in case of error
  */
-#define CHECK_RET(CONDITION, RETCODE, MESSAGE, ...) do {                                                                   \
-    if (!(CONDITION)) {                                                                                                \
-        VS_LOG_ERROR((MESSAGE), ##__VA_ARGS__);                                                                        \
-        return (RETCODE);                                                                                              \
-    } \
-    } while(0)
+#define CHECK_RET(CONDITION, RETCODE, MESSAGE, ...)                                                                    \
+    do {                                                                                                               \
+        if (!(CONDITION)) {                                                                                            \
+            if (MESSAGE) {                                                                                             \
+                VS_LOG_ERROR((MESSAGE), ##__VA_ARGS__);                                                                \
+            }                                                                                                          \
+            return (RETCODE);                                                                                          \
+        }                                                                                                              \
+    } while (0)
 
 /** Check condition and perform goto terminate if non-successful.
  *
@@ -148,10 +152,10 @@
  *  \param[in] BUF2 Second data buffer to be checked.
  *  \param[in] SIZE Data size.
  */
-#define MEMCMP_CHECK(BUF1, BUF2, SIZE)                                                                             \
-    CHECK(VS_IOT_MEMCMP((BUF1), (BUF2), (SIZE)) == 0,                                                                \
-                   #BUF1 " is not equal to " #BUF2 " while comparing %d bytes",                                        \
-                   (int)(SIZE))
+#define MEMCMP_CHECK(BUF1, BUF2, SIZE)                                                                                 \
+    CHECK(VS_IOT_MEMCMP((BUF1), (BUF2), (SIZE)) == 0,                                                                  \
+          #BUF1 " is not equal to " #BUF2 " while comparing %d bytes",                                                 \
+          (int)(SIZE))
 
 /** Compares two buffers and return \a RETCODE if non-successful.
  *
@@ -168,10 +172,11 @@
  *
  *  \return \a RET in case of error
  */
-#define MEMCMP_CHECK_RET(BUF1, BUF2, SIZE, RETCODE)                                                                             \
-    CHECK_RET(VS_IOT_MEMCMP((BUF1), (BUF2), (SIZE)) == 0, (RETCODE),                                                              \
-                   #BUF1 " is not equal to " #BUF2 " while comparing %d bytes",                                        \
-                   (int)(SIZE))
+#define MEMCMP_CHECK_RET(BUF1, BUF2, SIZE, RETCODE)                                                                    \
+    CHECK_RET(VS_IOT_MEMCMP((BUF1), (BUF2), (SIZE)) == 0,                                                              \
+              (RETCODE),                                                                                               \
+              #BUF1 " is not equal to " #BUF2 " while comparing %d bytes",                                             \
+              (int)(SIZE))
 
 /** Checks that \a ARG is non-zero and perform goto terminate in case of zero one.
  *
@@ -182,7 +187,7 @@
  *
  *  \param[in] ARG Argument to be checked.
  */
-#define CHECK_NOT_ZERO(ARG)        CHECK((ARG), "Argument " #ARG " must not be zero")
+#define CHECK_NOT_ZERO(ARG) CHECK((ARG), "Argument " #ARG " must not be zero")
 
 /** Checks that \a ARG is non-zero and return \a RETCODE in case of zero one.
  *
@@ -196,6 +201,6 @@
  *
  *  \return \a RETCODE in case of error
  */
-#define CHECK_NOT_ZERO_RET(ARG, RETCODE)        CHECK_RET((ARG), (RETCODE), "Argument " #ARG " must not be zero")                                                                           \
+#define CHECK_NOT_ZERO_RET(ARG, RETCODE) CHECK_RET((ARG), (RETCODE), "Argument " #ARG " must not be zero")
 
 #endif // VS_MACROS_H

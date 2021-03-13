@@ -67,8 +67,6 @@ VSQNetifBLE::tx(const QByteArray &data) {
     if (!isActive()) return false;
 
     qDebug() << "Send data lenght : " << data.size();
-    qDebug() << data.toHex();
-
 
     QLowEnergyCharacteristic writeCharacteristic;
     foreach (const QLowEnergyCharacteristic &ch, m_leService->characteristics()) {
@@ -85,14 +83,26 @@ VSQNetifBLE::tx(const QByteArray &data) {
 
     int sendPos = 0;
     while (true) {
-        QByteArray dataPart(data.mid(sendPos, _sendSizeLimit));
+        QByteArray dataPart(data.mid(sendPos, _sendSizeLimit - 1));
         if (dataPart.isEmpty()) {
             break;
         }
-        sendPos += dataPart.size();
+
+        QByteArray marker;
+
+        if (!sendPos) {
+            marker.append(0xAA);
+        } else {
+            marker.append(0x55);
+        }
+
+        dataPart = marker + dataPart;
+
+        sendPos += dataPart.size() - 1;
         m_leService->writeCharacteristic(writeCharacteristic,
-                                         dataPart,
-                                         QLowEnergyService::WriteMode::WriteWithoutResponse);
+                                         dataPart
+                                         );
+        qDebug() << "> " << dataPart.toHex();
      }
 
      return true;

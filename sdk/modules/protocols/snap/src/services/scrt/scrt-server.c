@@ -224,7 +224,7 @@ _scrt_add_user_request_processor(const uint8_t *request,
                                         found_name,
                                         USER_NAME_SZ_MAX)) {
         VS_LOG_WARNING("User already present: %s", (const char *)add_user_info->new_user_name);
-        return VS_CODE_ERR_USER_PRESENT;
+        return VS_CODE_OK;
     }
 
     // Verify request

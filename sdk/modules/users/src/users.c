@@ -454,7 +454,7 @@ vs_users_get_name(vs_user_type_t type, const vs_pubkey_dated_t *pubkey, char *na
     CHECK_NOT_ZERO_RET(pubkey, VS_CODE_ERR_ZERO_ARGUMENT);
     CHECK_NOT_ZERO_RET(type < VS_USER_TYPE_MAX, VS_CODE_ERR_ZERO_ARGUMENT);
     STATUS_CHECK_RET(_cache_cells_info(type), "Cannot cache users info");
-    STATUS_CHECK_RET(_find_by_key(type, pubkey, &pos), "Cannot find user");
+    STATUS_CHECK_RET(_find_by_key(type, pubkey, &pos), NULL);
 
     // TODO: improve speed by one read instead of two
     return _get_by_raw_pos(type, pos, name, buf_sz, (vs_pubkey_dated_t *)read_key, USER_KEY_BUF_SZ_MAX, &key_sz);
