@@ -35,6 +35,10 @@
 #include <virgil/iot/qt/VSQIoTKit.h>
 #include <virgil/iot/qt/netif/VSQNetifBLE.h>
 
+#if !defined(YIOT_DEBUG_QT_BLE)
+#define YIOT_DEBUG_QT_BLE 0
+#endif
+
 const QString VSQNetifBLE::_serviceUuid("0000abf0-0000-1000-8000-00805f9b34fb");
 const QString VSQNetifBLE::_serviceUuidTx("0000abf1-0000-1000-8000-00805f9b34fb");
 const QString VSQNetifBLE::_serviceUuidRx("0000abf2-0000-1000-8000-00805f9b34fb");
@@ -67,7 +71,9 @@ void
 VSQNetifBLE::internalTx(const QByteArray data) {
     if (!isActive()) return;
 
+#if YIOT_DEBUG_QT_BLE
     qDebug() << "Send data lenght : " << data.size();
+#endif
 
     QLowEnergyCharacteristic writeCharacteristic;
             foreach (const QLowEnergyCharacteristic &ch, m_leService->characteristics()) {
@@ -103,7 +109,10 @@ VSQNetifBLE::internalTx(const QByteArray data) {
         m_leService->writeCharacteristic(writeCharacteristic,
                                          dataPart
         );
+
+#if YIOT_DEBUG_QT_BLE
         qDebug() << "> " << dataPart.toHex();
+#endif
     }
 }
 
@@ -274,7 +283,9 @@ void
 VSQNetifBLE::onNotification(const QLowEnergyCharacteristic & characteristic, const QByteArray & data) {
     Q_UNUSED(characteristic)
     if (isActive()) {
+#if 0
         qDebug() << "IN : " << data.toHex();
+#endif
         processData(data);
     }
 }
