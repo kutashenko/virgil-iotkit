@@ -38,6 +38,23 @@
 #define BLE_ENUM_DEBUG 0
 #endif
 
+
+/******************************************************************************/
+void VSQNetifBLEEnumerator::updateState(const QString &name) {
+    const int _pos = m_devices.keys().indexOf(name);
+
+    const auto _idx = createIndex(_pos, 0);
+    emit dataChanged(_idx, _idx);
+
+    auto rssi = m_devices[name].info.rssi();
+    if (rssi && rssi > kRSSIEdge) {
+        if (m_devices[name].needInformUser) {
+            m_devices[name].needInformUser = false;
+            emit fireDeviceIsClose(name, true);
+        }
+    }
+}
+
 /******************************************************************************/
 void
 VSQNetifBLEEnumerator::onDeviceDiscovered(const QBluetoothDeviceInfo &deviceInfo) {
@@ -52,9 +69,9 @@ VSQNetifBLEEnumerator::onDeviceDiscovered(const QBluetoothDeviceInfo &deviceInfo
             return;
         }
 
-        QString name = deviceInfo.name();//.remove(kPrefix);
+        QString name = deviceInfo.name();
 
-        const bool _isInsert = !m_devices.keys().contains(name) /*&& m_devices.count()*/;
+        const bool _isInsert = !m_devices.keys().contains(name);
 
         if (_isInsert) {
             // TODO: Fix it
@@ -65,17 +82,15 @@ VSQNetifBLEEnumerator::onDeviceDiscovered(const QBluetoothDeviceInfo &deviceInfo
             m_devices[name] = BLEDevInfo(deviceInfo, QDateTime::currentDateTime());
             endInsertRows();
         } else {
-            m_devices[name] = BLEDevInfo(deviceInfo, QDateTime::currentDateTime());
+            auto oldRSSI = m_devices[name].info.rssi();
+            m_devices[name].lastUpdate = QDateTime::currentDateTime();
+            m_devices[name].info = deviceInfo;
+            if (oldRSSI && !deviceInfo.rssi()) {
+                m_devices[name].info.setRssi(oldRSSI);
+            }
         }
 
-        const int _pos = m_devices.keys().indexOf(name);
-
-        const auto _idx = createIndex(_pos, 0);
-        emit dataChanged(_idx, _idx);
-
-        if (deviceInfo.rssi() && deviceInfo.rssi() > 40) {
-            emit fireDeviceIsClose(name, true);
-        }
+        updateState(name);
     }
 }
 
@@ -108,6 +123,18 @@ VSQNetifBLEEnumerator::onDiscoveryFinished() {
 }
 
 /******************************************************************************/
+void VSQNetifBLEEnumerator::onDeviceUpdated(const QBluetoothDeviceInfo &info, QBluetoothDeviceInfo::Fields updatedFields) {
+    if (updatedFields.testFlag(QBluetoothDeviceInfo::Field::RSSI)
+        && m_devices.keys().contains(info.name())) {
+        auto rssi = m_devices[info.name()].info.rssi();
+        if (rssi != info.rssi()) {
+            m_devices[info.name()].info.setRssi(info.rssi());
+            updateState(info.name());
+        }
+    }
+}
+
+/******************************************************************************/
 void
 VSQNetifBLEEnumerator::startDiscovery() {
 
@@ -122,6 +149,11 @@ VSQNetifBLEEnumerator::startDiscovery() {
             &QBluetoothDeviceDiscoveryAgent::deviceDiscovered,
             this,
             &VSQNetifBLEEnumerator::onDeviceDiscovered);
+
+    connect(discoveryAgent,
+            &QBluetoothDeviceDiscoveryAgent::deviceUpdated,
+            this,
+            &VSQNetifBLEEnumerator::onDeviceUpdated);
 
     connect(discoveryAgent,
             &QBluetoothDeviceDiscoveryAgent::finished,

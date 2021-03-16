@@ -47,6 +47,7 @@ class VSQNetifBLEEnumerator : public QAbstractTableModel {
     struct BLEDevInfo {
         QBluetoothDeviceInfo info;
         QDateTime lastUpdate;
+        bool needInformUser = true;
 
         BLEDevInfo(const QBluetoothDeviceInfo &inf, const QDateTime &dt) {
             info = inf;
@@ -128,14 +129,19 @@ private slots:
      */
     void onDiscoveryFinished();
 
+    void onDeviceUpdated(const QBluetoothDeviceInfo &info, QBluetoothDeviceInfo::Fields updatedFields);
+
 private:
     static const int kBLEDiscoverPeriodMS = 2000;
     static const int kInactiveTimeoutMS = 15000;
+    static const int kRSSIEdge = -40;
 
     bool m_stopped = false;
 
     VSQBLEDevices m_devices;                                /**< Map of device name -> device info */
     void cleanOldDevices();
+
+    void updateState(const QString &name);
 };
 
 #endif // VIRGIL_IOTKIT_QT_BLE_ENUMERATOR_H_
